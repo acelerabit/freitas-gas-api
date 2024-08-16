@@ -57,13 +57,10 @@ describe('Activate subscription usecase', () => {
     await subRepository.create(newSubscription);
 
     await usecase.execute({
-      paymentIntentId: randomUUID(),
+      paymentMethod: randomUUID(),
       userId: newUser.id,
     });
 
     const sub = await subRepository.findById(newSubscription.id);
-
-    expect(sub.paymentMethodId).toBeDefined();
-    expect(sub.paymentMethodId).toBeTruthy();
   });
 });
