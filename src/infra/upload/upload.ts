@@ -1,15 +1,20 @@
-import { S3 } from 'aws-sdk';
+// import { S3 } from 'aws-sdk';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import {
-  S3Client,
-  PutObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3,
+  S3Client,
 } from '@aws-sdk/client-s3';
 import 'dotenv/config';
 import { randomUUID } from 'crypto';
 
 const s3Aws = new S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
 });
 
 import { Uploader } from '@/application/upload/upload';
@@ -36,7 +41,9 @@ export class Upload implements Uploader {
       Expires: 60 * 10,
     };
 
-    const url = await s3Aws.getSignedUrl('getObject', params);
+    const url = await await getSignedUrl(s3Aws, new GetObjectCommand(params), {
+      expiresIn: params.Expires,
+    });
     return url;
   }
 
