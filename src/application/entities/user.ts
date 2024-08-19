@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import { Replace } from './../../helpers/Replace';
-import { Subscription } from './subscription';
 
 type Role = 'ADMIN' | 'USER';
 
@@ -12,9 +11,6 @@ export interface UserProps {
   acceptNotifications?: boolean;
   role: Role;
   createdAt: Date;
-  externalId?: string;
-  subscriptionId?: string;
-  subscription?: Subscription;
 }
 
 export class User {
@@ -26,8 +22,6 @@ export class User {
     this.props = {
       ...props,
       createdAt: props.createdAt ?? new Date(),
-      externalId: props.externalId ?? null,
-      subscriptionId: props.subscriptionId ?? null,
     };
   }
 
@@ -83,36 +77,8 @@ export class User {
     this.props.role = role;
   }
 
-  public get subscriptionId(): string {
-    return this.props.subscriptionId;
-  }
-
-  set subscriptionId(subscriptionId: string) {
-    this.props.subscriptionId = subscriptionId;
-  }
-
-  public get externalId(): string {
-    return this.props.externalId;
-  }
-
-  set externalId(externalId: string) {
-    this.props.externalId = externalId;
-  }
-
-  public get subscription(): Subscription {
-    return this.props.subscription;
-  }
-
   public get createdAt(): Date {
     return this.props.createdAt;
-  }
-
-  saveSubscription(subscription: Subscription) {
-    this.props.subscription = subscription;
-  }
-
-  updateUserSubscription(subscription: Subscription) {
-    this.props.subscription = subscription;
   }
 
   static create(props: Replace<UserProps, { createdAt?: Date }>, id?: string) {

@@ -43,11 +43,10 @@ export class AuthController {
   async google(@Body() body: AuthenticateUserWithGoogleBody) {
     const { email, name } = body;
 
-    const { accessToken, user, subscriptionValue } =
-      await this.loginWithGoogle.execute({
-        email,
-        name,
-      });
+    const { accessToken, user } = await this.loginWithGoogle.execute({
+      email,
+      name,
+    });
 
     return {
       access_token: accessToken,
@@ -56,7 +55,6 @@ export class AuthController {
         email: user.email,
         createdAt: user.createdAt,
       },
-      subscriptionValue,
     };
   }
 }

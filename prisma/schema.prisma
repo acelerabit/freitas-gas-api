@@ -22,7 +22,7 @@ model User {
   email               String  @unique
   password            String?
   avatarUrl           String? @map("avatar_url")
-  acceptNotifications Boolean @default(false) @map("accept_notifications")
+  acceptNotifications Boolean @default(true) @map("accept_notifications")
   externalId          String? @map("external_id")
 
   role Role @default(USER)
@@ -32,96 +32,8 @@ model User {
 
   notifications Notification[]
 
-  payments     Payment[]
-  subscription Subscription?
-
   @@index([email])
   @@map("users")
-}
-
-enum PLAN_INTERVAL {
-  day
-  week
-  month
-  year
-}
-
-model Plan {
-  id               String         @id @default(uuid())
-  externalId       String?        @unique @map("external_id")
-  priceExternalId  String?        @map("price_external_id")
-  name             String
-  value            Float
-  durationInMonths Int            @map("duration_in_months")
-  interval         PLAN_INTERVAL
-  active           Boolean        @default(true)
-  created_at       DateTime       @default(now())
-  subscriptions    Subscription[]
-  trialDays        Int?           @map("trial_days")
-  public           Boolean        @default(false)
-  isDefault        Boolean        @default(false) @map("is_default")
-
-  @@map("plans")
-}
-
-enum UserPlanStatus {
-  active
-  canceled
-  incomplete
-  incomplete_expired
-  past_due
-  paused
-  trialing
-  unpaid
-}
-
-model Subscription {
-  id String @id @default(uuid())
-
-  externalId String? @map("external_id")
-  value      Int
-
-  plan Plan @relation(fields: [planId], references: [id])
-
-  expiration      Int?
-  planStatus      UserPlanStatus @map("plan_status")
-  active          Boolean
-  createdAt       DateTime       @map("created_at")
-  planId          String         @map("plan_id")
-  paymentMethodId String?        @map("payment_method_id")
-  payments        Payment[]
-  user            User           @relation(fields: [userId], references: [id])
-  userId          String         @unique @map("user_id")
-
-  @@map("subscriptions")
-}
-
-enum PAYMENT_STATUS {
-  draft
-  open
-  paid
-  uncollectible
-  void
-}
-
-model Payment {
-  id             String          @id @default(uuid())
-  externalId     String          @unique @default(uuid()) @map("external_id")
-  value          Float
-  userId         String          @map("user_id")
-  user           User            @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  subscriptionId String          @map("subscription_id")
-  subscription   Subscription    @relation(fields: [subscriptionId], references: [id])
-  paymentDate    DateTime?       @map("payment_date")
-  completed      Boolean         @default(false)
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
-  voucher        String?
-  status         PAYMENT_STATUS? @default(open)
-
-  attempts Int @default(0)
-
-  @@map("payments")
 }
 
 model Notification {

@@ -19,7 +19,6 @@ export class PrismaUsersRepository implements UsersRepository {
         createdAt: user.createdAt,
         role: user.role,
         acceptNotifications: user.acceptNotifications,
-        externalId: user.externalId,
       },
     });
   }
@@ -28,9 +27,6 @@ export class PrismaUsersRepository implements UsersRepository {
     const raw = await this.prismaService.user.findUnique({
       where: {
         email,
-      },
-      include: {
-        subscription: true,
       },
     });
 
@@ -63,9 +59,6 @@ export class PrismaUsersRepository implements UsersRepository {
     const raw = await this.prismaService.user.findUnique({
       where: {
         id,
-      },
-      include: {
-        subscription: true,
       },
     });
 

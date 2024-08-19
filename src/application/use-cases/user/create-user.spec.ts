@@ -22,12 +22,7 @@ describe('Create User', () => {
   beforeEach(() => {
     inMemoryUsersRepository = new InMemoryUsersRepository();
     fakeHasher = new FakeHasher();
-    const billingServiceMock = mock();
-    createUser = new CreateUser(
-      inMemoryUsersRepository,
-      fakeHasher,
-      billingServiceMock,
-    );
+    createUser = new CreateUser(inMemoryUsersRepository, fakeHasher);
   });
 
   it('should be able create a new user', async () => {

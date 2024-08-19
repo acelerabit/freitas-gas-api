@@ -40,7 +40,6 @@ export class UsersController {
     private getUserByEmail: GetUserByEmail,
     private updateUser: UpdateUser,
     private fetchUsers: FetchUsers,
-    private scheduleService: ScheduleService,
     @InjectQueue(EMAIL_QUEUE) private sendMailQueue: Queue,
   ) {}
 

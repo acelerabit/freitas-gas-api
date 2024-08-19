@@ -28,14 +28,6 @@ export class SendForgotEmail {
       });
     }
 
-    // this.jwt.sign(
-    //   { email },
-    //   {
-    //     secret: jwtSecret,
-    //     expiresIn: '5m',
-    //   },
-    // );
-
     const expiresIn = '5m';
     const token = await this.encrypter.encrypt({ email }, expiresIn);
 
