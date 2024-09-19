@@ -6,7 +6,7 @@ import { User } from './../../entities/user';
 interface UserRequest {
   name: string;
   email: string;
-  role: 'ADMIN' | 'USER';
+  role: 'ADMIN' | 'DELIVERYMAN';
   password: string;
 }
 

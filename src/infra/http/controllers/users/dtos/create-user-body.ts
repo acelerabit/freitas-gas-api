@@ -11,5 +11,5 @@ export class CreateUserBody {
   password: string;
 
   @IsNotEmpty()
-  role: 'USER' | 'ADMIN';
+  role: 'DELIVERYMAN' | 'ADMIN';
 }

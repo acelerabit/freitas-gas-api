@@ -30,6 +30,7 @@ import { NotificationController } from './controllers/notifications/notification
 import { RecoveryPasswordController } from './controllers/recovery-password/recovery-password.controller';
 import { UploadController } from './controllers/uploads/upload-controller';
 import { UsersController } from './controllers/users/users.controller';
+import { DeleteUser } from '@/application/use-cases/user/delete-user';
 
 @Module({
   controllers: [
@@ -61,6 +62,7 @@ import { UsersController } from './controllers/users/users.controller';
     FetchUsers,
     UploadToProfile,
     ReadAllNotifications,
+    DeleteUser,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

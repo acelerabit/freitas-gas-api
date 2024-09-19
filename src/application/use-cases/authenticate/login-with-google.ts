@@ -42,7 +42,7 @@ export class LoginWithGoogle {
     const newUser = User.create({
       name,
       email,
-      role: 'USER',
+      role: 'DELIVERYMAN',
       createdAt: new Date(),
     });
 

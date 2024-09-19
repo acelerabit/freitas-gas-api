@@ -19,6 +19,7 @@ export class PrismaUsersRepository implements UsersRepository {
         createdAt: user.createdAt,
         role: user.role,
         acceptNotifications: user.acceptNotifications,
+        status: user.status,
       },
     });
   }
@@ -84,5 +85,14 @@ export class PrismaUsersRepository implements UsersRepository {
     const count = await this.prismaService.user.count();
 
     return count;
+  }
+  async delete(id: string): Promise<void> {
+    const result = await this.prismaService.user.delete({
+      where: { id },
+    });
+
+    if (!result) {
+      throw new Error('User not found or already deleted');
+    }
   }
 }

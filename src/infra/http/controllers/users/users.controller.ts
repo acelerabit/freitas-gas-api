@@ -10,7 +10,9 @@ import {
   Put,
   Query,
   UseGuards,
+  Delete
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { Queue } from 'bull';
 import { CreateUser } from 'src/application/use-cases/user/create-user';
 import { JwtUserAuthGuard } from 'src/infra/auth/jwt.guard';
@@ -23,6 +25,8 @@ import { GetUserByEmailBody } from './dtos/get-user-by-email';
 import { GetUserByEmail } from '@/application/use-cases/user/get-user-by-email';
 import { FetchUsers } from '@/application/use-cases/user/fetch-users';
 import { UsersPresenters } from './presenters/user.presenter';
+import { DeleteUser } from '@/application/use-cases/user/delete-user';
+import { Auth } from 'src/infra/decorators/auth.decorator';
 
 /** If you want catch data from requests and responses, enable it */
 
@@ -40,10 +44,12 @@ export class UsersController {
     private getUserByEmail: GetUserByEmail,
     private updateUser: UpdateUser,
     private fetchUsers: FetchUsers,
+    private deleteUser: DeleteUser,
     @InjectQueue(EMAIL_QUEUE) private sendMailQueue: Queue,
   ) {}
 
   // @UseInterceptors(interceptor)
+  @Auth(Role.ADMIN)
   @Post()
   async create(@Body() body: CreateUserBody) {
     const { email, password, role, name } = body;
@@ -63,6 +69,7 @@ export class UsersController {
     };
   }
 
+  @Auth(Role.ADMIN)
   @Get()
   async list(@Query() query: { page?: string; itemsPerPage?: string }) {
     const { page, itemsPerPage } = query;
@@ -77,6 +84,7 @@ export class UsersController {
     return users.map(UsersPresenters.toHTTP);
   }
 
+  @Auth(Role.ADMIN)
   @Get('/:id')
   async get(@Param('id') id: string) {
     const { user } = await this.getUser.execute({
@@ -86,6 +94,7 @@ export class UsersController {
     return UsersPresenters.toHTTP(user);
   }
 
+  @Auth(Role.ADMIN)
   @Post('/by-email')
   async getByEmail(@Body() body: GetUserByEmailBody) {
     const { email } = body;
@@ -97,9 +106,10 @@ export class UsersController {
     return UsersPresenters.toHTTP(user);
   }
 
+  @Auth(Role.ADMIN)
   @Put('/update')
   async update(@Body() body: UpdateUserBody) {
-    const { email, id, role, name, acceptNotifications } = body;
+    const { email, id, role, name, acceptNotifications, status } = body;
 
     const { user } = await this.updateUser.execute({
       name,
@@ -107,6 +117,7 @@ export class UsersController {
       role,
       id,
       acceptNotifications,
+      status,
     });
 
     return UsersPresenters.toHTTP(user);
@@ -118,5 +129,12 @@ export class UsersController {
     await this.sendMailQueue.add('sendMail-job', { email: 'teste@gmail.com' });
 
     return;
+  }
+
+  @Auth(Role.ADMIN)
+  @Delete('/:id')
+  async delete(@Param('id') id: string) {
+    await this.deleteUser.execute({ id });
+    return { message: 'User deleted successfully' };
   }
 }

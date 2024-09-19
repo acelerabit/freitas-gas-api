@@ -30,7 +30,7 @@ describe('Create User', () => {
       name: 'user-test',
       email: 'email@test.com',
       password: '123',
-      role: 'USER',
+      role: 'DELIVERYMAN',
       createdAt: new Date(),
     });
 

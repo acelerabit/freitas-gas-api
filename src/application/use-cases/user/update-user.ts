@@ -6,8 +6,9 @@ export interface UpdateUserRequest {
   id: string;
   name: string;
   email: string;
-  role: 'USER' | 'ADMIN';
+  role: 'DELIVERYMAN' | 'ADMIN';
   acceptNotifications: boolean;
+  status: boolean;
 }
 
 export interface UpdateUserResponse {
@@ -24,6 +25,7 @@ export class UpdateUser {
     name,
     role,
     acceptNotifications,
+    status,
   }: UpdateUserRequest): Promise<UpdateUserResponse> {
     const user = await this.usersRepository.findById(id);
 
@@ -50,6 +52,10 @@ export class UpdateUser {
 
     if (role) {
       updates.role = role;
+    }
+
+    if (typeof status === 'boolean') {
+      updates.status = status;
     }
 
     Object.assign(user, updates);

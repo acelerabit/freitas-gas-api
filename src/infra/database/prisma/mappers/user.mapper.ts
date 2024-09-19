@@ -11,6 +11,7 @@ export class PrismaUsersMapper {
         password: user.password,
         avatarUrl: user.avatarUrl,
         acceptNotifications: user.acceptNotifications,
+        status: user.status,
         createdAt: user.createdAt,
       },
       user.id,
@@ -26,6 +27,7 @@ export class PrismaUsersMapper {
       role: user.role,
       avatarUrl: user.avatarUrl,
       acceptNotifications: user.acceptNotifications,
+      status: user.status,
       createdAt: user.createdAt,
     };
   }

@@ -12,7 +12,41 @@ datasource db {
 
 enum Role {
   ADMIN
-  USER
+  DELIVERYMAN
+}
+
+enum TransactionType {
+  ENTRY
+  EXIT
+  TRANSFER
+}
+
+enum TransactionCategory {
+  DEPOSIT
+  SALE
+  EXPENSE
+  CUSTOM
+}
+
+enum PaymentMethod {
+  CARTAO
+  DINHEIRO
+  FIADO
+  PIX
+  TRANSFERENCIA
+}
+
+enum ProductType {
+  P3
+  P13
+  P20
+  P45
+}
+
+enum BottleStatus {
+  FULL
+  EMPTY
+  COMODATO
 }
 
 model User {
@@ -21,16 +55,17 @@ model User {
   name                String
   email               String  @unique
   password            String?
+  status              Boolean  @default(true)
   avatarUrl           String? @map("avatar_url")
   acceptNotifications Boolean @default(true) @map("accept_notifications")
-  externalId          String? @map("external_id")
 
-  role Role @default(USER)
+  role Role @default(DELIVERYMAN)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   notifications Notification[]
+  transactions Transaction[]
 
   @@index([email])
   @@map("users")
@@ -50,10 +85,89 @@ model Notification {
   @@map("notifications")
 }
 
+model Product {
+  id        String   @id @default(uuid())
+  type      ProductType
+  status    BottleStatus
+  price     Int
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  sales     Sales[]
+
+  @@map("products")
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String
+  street    String
+  number    String
+  district String
+  city      String
+  state     String
+  creditBalance Int @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sales     Sales[]
+
+  @@map("customers")
+}
+
+model Sales {
+  id            String        @id @default(uuid())
+  paymentMethod PaymentMethod
+  quantity      Int
+  total         Int
+  createdAt     DateTime      @default(now()) @map("created_at")
+  
+  product       Product       @relation(fields: [productId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  productId     String        @map("product_id")
+  
+  customer      Customer      @relation(fields: [customerId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  customerId    String        @map("customer_id")
+
+  returned      Boolean       @default(false)
+
+  @@map("sales")
+}
+
+model Transaction {
+  id            String   @id @default(uuid())
+  amount        Int
+  transactionType TransactionType
+  mainAccount   Boolean
+  category      TransactionCategory
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  user          User      @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  userId        String    @map("user_id")
+
+  referenceId   String?
+  customCategory String?
+
+  @@map("transactions")
+}
+
+
 model Log {
   id String @id @default(uuid())
 
   data Json
 
   @@map("logs")
+}
+
+model Supplier {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("suppliers")
 }

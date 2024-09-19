@@ -24,7 +24,7 @@ describe('Update User Password', () => {
       name: 'user-test',
       email: 'johndoe@test.com',
       password: await fakeHasher.hash('12345'),
-      role: 'USER',
+      role: 'DELIVERYMAN',
       createdAt: new Date(),
     });
 
@@ -46,7 +46,7 @@ describe('Update User Password', () => {
       name: 'user-test',
       email: 'email@test.com',
       password: await fakeHasher.hash('123'),
-      role: 'USER',
+      role: 'DELIVERYMAN',
       createdAt: new Date(),
     });
 

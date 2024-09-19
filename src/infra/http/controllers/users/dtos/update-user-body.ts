@@ -14,9 +14,13 @@ export class UpdateUserBody {
 
   @IsOptional()
   @IsNotEmpty()
-  role: 'USER' | 'ADMIN';
+  role: 'DELIVERYMAN' | 'ADMIN';
 
   @IsOptional()
   @IsNotEmpty()
   acceptNotifications: boolean;
+
+  @IsOptional()
+  @IsNotEmpty()
+  status: boolean;
 }

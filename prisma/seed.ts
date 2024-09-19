@@ -11,19 +11,23 @@ async function seed() {
   await prisma.user.createMany({
     data: [
       {
-        name: 'John doe',
-        email: 'johndoe@gmail.com',
+        name: 'Acelerabit testes',
+        email: 'admin@acelerabit.com',
         password: passwordHash,
+        status: true,
+        role: 'ADMIN',
       },
       {
         name: faker.person.fullName(),
         email: faker.internet.email(),
         password: passwordHash,
+        status: true,
       },
       {
         name: faker.person.fullName(),
         email: faker.internet.email(),
         password: passwordHash,
+        status: true,
       },
     ],
   });

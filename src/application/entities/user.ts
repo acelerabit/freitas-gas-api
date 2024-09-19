@@ -1,13 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { Replace } from './../../helpers/Replace';
 
-type Role = 'ADMIN' | 'USER';
+type Role = 'ADMIN' | 'DELIVERYMAN';
 
 export interface UserProps {
   name: string;
   email: string;
   password?: string;
   avatarUrl?: string;
+  status?: boolean;
   acceptNotifications?: boolean;
   role: Role;
   createdAt: Date;
@@ -21,6 +22,7 @@ export class User {
     this._id = id ?? randomUUID();
     this.props = {
       ...props,
+      status: props.status ?? false,
       createdAt: props.createdAt ?? new Date(),
     };
   }
@@ -67,6 +69,14 @@ export class User {
 
   public set acceptNotifications(acceptNotifications: boolean) {
     this.props.acceptNotifications = acceptNotifications;
+  }
+
+  public get status(): boolean {
+    return this.props.status;
+  }
+
+  public set status(status: boolean) {
+    this.props.status = status;
   }
 
   public get role(): Role {
