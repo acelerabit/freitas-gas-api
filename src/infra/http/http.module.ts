@@ -31,6 +31,14 @@ import { RecoveryPasswordController } from './controllers/recovery-password/reco
 import { UploadController } from './controllers/uploads/upload-controller';
 import { UsersController } from './controllers/users/users.controller';
 import { DeleteUser } from '@/application/use-cases/user/delete-user';
+import { CreateCustomerUseCase } from '@/application/use-cases/customer/create-customer';
+import { FindAllCustomersUseCase } from '@/application/use-cases/customer/find-all-customers';
+import { FindCustomerByIdUseCase } from '@/application/use-cases/customer/find-customer-by-id';
+import { UpdateCustomerUseCase } from '@/application/use-cases/customer/update-customer';
+import { DeleteCustomerUseCase } from '@/application/use-cases/customer/delete-customer';
+import { CustomerController } from './controllers/customer/customer.controller';
+import { CustomersRepository } from '@/application/repositories/customer-repository';
+import { PrismaCustomersRepository } from '../database/prisma/repositories/prisma-customers-repository';
 
 @Module({
   controllers: [
@@ -41,6 +49,7 @@ import { DeleteUser } from '@/application/use-cases/user/delete-user';
     RecoveryPasswordController,
     UploadController,
     DashboardController,
+    CustomerController,
   ],
   providers: [
     CreateUser,
@@ -63,6 +72,15 @@ import { DeleteUser } from '@/application/use-cases/user/delete-user';
     UploadToProfile,
     ReadAllNotifications,
     DeleteUser,
+    {
+      provide: CustomersRepository,
+      useClass: PrismaCustomersRepository,
+    },
+    CreateCustomerUseCase,
+    FindAllCustomersUseCase,
+    FindCustomerByIdUseCase,
+    UpdateCustomerUseCase,
+    DeleteCustomerUseCase,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

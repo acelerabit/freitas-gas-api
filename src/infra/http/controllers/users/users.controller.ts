@@ -94,7 +94,6 @@ export class UsersController {
     return UsersPresenters.toHTTP(user);
   }
 
-  @Auth(Role.ADMIN)
   @Post('/by-email')
   async getByEmail(@Body() body: GetUserByEmailBody) {
     const { email } = body;
