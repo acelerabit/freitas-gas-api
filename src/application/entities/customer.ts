@@ -25,7 +25,7 @@ export class Customer {
     props: Replace<CustomerProps, { createdAt?: Date; updatedAt?: Date }>,
     id?: string,
   ) {
-    this._id = id ?? randomUUID();
+    this._id = id ?? props.id ?? randomUUID();
     this.props = {
       ...props,
       id: this._id,

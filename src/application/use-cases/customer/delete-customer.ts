@@ -1,5 +1,7 @@
 import { CustomersRepository } from '../../repositories/customer-repository';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class DeleteCustomerUseCase {
   constructor(private customersRepository: CustomersRepository) {}
 

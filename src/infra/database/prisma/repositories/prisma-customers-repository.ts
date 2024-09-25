@@ -74,12 +74,18 @@ export class PrismaCustomersRepository implements CustomersRepository {
   }
 
   async update(customer: Customer): Promise<void> {
+    const existingCustomer = await this.prismaService.customer.findUnique({
+      where: { id: customer.id },
+    });
+
+    if (!existingCustomer) {
+      throw new Error(`Customer with id ${customer.id} not found`);
+    }
+
     const prismaCustomer = PrismaCustomersMapper.toPrisma(customer);
 
     await this.prismaService.customer.update({
-      where: {
-        id: customer.id,
-      },
+      where: { id: customer.id },
       data: prismaCustomer,
     });
   }

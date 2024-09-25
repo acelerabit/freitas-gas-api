@@ -57,7 +57,7 @@ export class CustomerController {
   ): Promise<void> {
     const customer = Customer.create({
       ...customerData,
-      id,
+      id: customerData.id || id,
     } as any);
     await this.updateCustomerUseCase.execute(customer);
   }
