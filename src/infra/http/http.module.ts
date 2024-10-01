@@ -40,6 +40,12 @@ import { CustomerController } from './controllers/customer/customer.controller';
 import { RegisterSaleUseCase } from '@/application/use-cases/sale/register-sale';
 import { CreateTransactionUseCase } from '@/application/use-cases/transaction/create-transaction';
 import { SalesController } from './controllers/sale/sales.controller';
+import { CreateProductUseCase } from '@/application/use-cases/product/create-product';
+import { DeleteProductUseCase } from '@/application/use-cases/product/delete-product';
+import { ListProductsUseCase } from '@/application/use-cases/product/find-all-product';
+import { GetProductByIdUseCase } from '@/application/use-cases/product/find-product-by-id';
+import { UpdateProductUseCase } from '@/application/use-cases/product/update-product';
+import { ProductController } from './controllers/product/products.controller';
 
 @Module({
   controllers: [
@@ -52,6 +58,7 @@ import { SalesController } from './controllers/sale/sales.controller';
     DashboardController,
     CustomerController,
     SalesController,
+    ProductController,
   ],
   providers: [
     CreateUser,
@@ -81,6 +88,11 @@ import { SalesController } from './controllers/sale/sales.controller';
     DeleteCustomerUseCase,
     RegisterSaleUseCase,
     CreateTransactionUseCase,
+    CreateProductUseCase,
+    DeleteProductUseCase,
+    ListProductsUseCase,
+    GetProductByIdUseCase,
+    UpdateProductUseCase,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

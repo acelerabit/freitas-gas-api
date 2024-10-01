@@ -37,14 +37,24 @@ export class PrismaSalesRepository extends SalesRepository {
     });
   }
 
-  async updateStock(productId: string, quantityChange: number): Promise<void> {
+  async updateStock(productId: string, quantity: number): Promise<void> {
+    const product = await this.prismaService.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      throw new Error('Produto não encontrado');
+    }
+
+    const newStock = product.quantity + quantity;
+
+    if (newStock < 0) {
+      throw new Error('Estoque insuficiente');
+    }
+
     await this.prismaService.product.update({
       where: { id: productId },
-      data: {
-        quantity: {
-          decrement: Math.abs(quantityChange),
-        },
-      },
+      data: { quantity: newStock },
     });
   }
 }

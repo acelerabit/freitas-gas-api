@@ -1,12 +1,21 @@
+import { ProductType, BottleStatus } from '@prisma/client';
 export class Product {
   private _id: string;
-  private _name: string;
+  private _type: ProductType;
+  private _status: BottleStatus;
   private _price: number;
   private _quantity: number;
 
-  constructor(id: string, name: string, price: number, quantity: number) {
+  constructor(
+    id: string,
+    type: ProductType,
+    status: BottleStatus,
+    price: number,
+    quantity: number,
+  ) {
     this._id = id;
-    this._name = name;
+    this._type = type;
+    this._status = status;
     this._price = price;
     this._quantity = quantity;
   }
@@ -15,8 +24,12 @@ export class Product {
     return this._id;
   }
 
-  get name(): string {
-    return this._name;
+  get type(): ProductType {
+    return this._type;
+  }
+
+  get status(): BottleStatus {
+    return this._status;
   }
 
   get price(): number {
@@ -26,6 +39,7 @@ export class Product {
   get quantity(): number {
     return this._quantity;
   }
+
   reduceQuantity(amount: number): void {
     if (this._quantity < amount) {
       throw new Error('Quantidade insuficiente');

@@ -2,6 +2,7 @@ import { Controller, Post, Body } from '@nestjs/common';
 import { RegisterSaleUseCase } from '../../../../application/use-cases/sale/register-sale';
 import { Sale } from '../../../../application/entities/sale';
 import { Product } from '../../../../application/entities/product';
+import { ProductType, BottleStatus } from '@prisma/client';
 
 @Controller('sales')
 export class SalesController {
@@ -13,7 +14,8 @@ export class SalesController {
       (product) =>
         new Product(
           product.productId,
-          product.name,
+          product.type as ProductType,
+          product.status as BottleStatus,
           product.price,
           product.quantity,
         ),
@@ -25,7 +27,7 @@ export class SalesController {
       products,
       body.paymentMethod,
       0,
-      body.type,
+      'FULL',
     );
 
     await this.registerSaleUseCase.execute(sale);
