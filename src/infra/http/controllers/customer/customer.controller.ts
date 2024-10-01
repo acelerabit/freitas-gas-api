@@ -16,6 +16,7 @@ import { DeleteCustomerUseCase } from '../../../../application/use-cases/custome
 import { Customer, CustomerProps } from 'src/application/entities/customer';
 import { PaginationParams } from '@/@shared/pagination-interface';
 import { CustomersRepository } from '@/application/repositories/customer-repository';
+import { FindAllCustomersWithoutPaginateUseCase } from '@/application/use-cases/customer/FindAllCustomersWithoutPaginate';
 
 @Controller('customers')
 export class CustomerController {
@@ -26,6 +27,7 @@ export class CustomerController {
     private readonly updateCustomerUseCase: UpdateCustomerUseCase,
     private readonly deleteCustomerUseCase: DeleteCustomerUseCase,
     private readonly customersRepository: CustomersRepository,
+    private readonly findAllCustomersWithoutPaginateUseCase: FindAllCustomersWithoutPaginateUseCase,
   ) {}
 
   @Post()
@@ -39,6 +41,11 @@ export class CustomerController {
   @Get()
   async findAll(@Query() pagination: PaginationParams): Promise<Customer[]> {
     return this.findAllCustomersUseCase.execute(pagination);
+  }
+
+  @Get('/all')
+  async findAllWithoutPaginate(): Promise<Customer[]> {
+    return this.findAllCustomersWithoutPaginateUseCase.execute();
   }
 
   @Get('/:id')
