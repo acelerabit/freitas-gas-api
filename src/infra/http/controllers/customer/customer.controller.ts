@@ -16,7 +16,7 @@ import { DeleteCustomerUseCase } from '../../../../application/use-cases/custome
 import { Customer, CustomerProps } from 'src/application/entities/customer';
 import { PaginationParams } from '@/@shared/pagination-interface';
 import { CustomersRepository } from '@/application/repositories/customer-repository';
-import { FindAllCustomersWithoutPaginateUseCase } from '@/application/use-cases/customer/FindAllCustomersWithoutPaginate';
+import { FindAllCustomersWithoutPaginateUseCase } from '@/application/use-cases/customer/findAllCustomersWithoutPaginate';
 
 @Controller('customers')
 export class CustomerController {
