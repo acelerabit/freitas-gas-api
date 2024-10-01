@@ -37,8 +37,9 @@ import { FindCustomerByIdUseCase } from '@/application/use-cases/customer/find-c
 import { UpdateCustomerUseCase } from '@/application/use-cases/customer/update-customer';
 import { DeleteCustomerUseCase } from '@/application/use-cases/customer/delete-customer';
 import { CustomerController } from './controllers/customer/customer.controller';
-import { CustomersRepository } from '@/application/repositories/customer-repository';
-import { PrismaCustomersRepository } from '../database/prisma/repositories/prisma-customers-repository';
+import { RegisterSaleUseCase } from '@/application/use-cases/sale/register-sale';
+import { CreateTransactionUseCase } from '@/application/use-cases/transaction/create-transaction';
+import { SalesController } from './controllers/sale/sales.controller';
 
 @Module({
   controllers: [
@@ -50,6 +51,7 @@ import { PrismaCustomersRepository } from '../database/prisma/repositories/prism
     UploadController,
     DashboardController,
     CustomerController,
+    SalesController,
   ],
   providers: [
     CreateUser,
@@ -72,15 +74,13 @@ import { PrismaCustomersRepository } from '../database/prisma/repositories/prism
     UploadToProfile,
     ReadAllNotifications,
     DeleteUser,
-    {
-      provide: CustomersRepository,
-      useClass: PrismaCustomersRepository,
-    },
     CreateCustomerUseCase,
     FindAllCustomersUseCase,
     FindCustomerByIdUseCase,
     UpdateCustomerUseCase,
     DeleteCustomerUseCase,
+    RegisterSaleUseCase,
+    CreateTransactionUseCase,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

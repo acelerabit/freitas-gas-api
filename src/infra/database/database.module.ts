@@ -10,6 +10,10 @@ import { PrismaLogsRepository } from './prisma/repositories/prisma-logs-reposito
 import { PrismaNotificationsRepository } from './prisma/repositories/prisma-notifications-repository';
 import { PrismaUsersRepository } from './prisma/repositories/prisma-user-repository';
 import { PrismaCustomersRepository } from './prisma/repositories/prisma-customers-repository';
+import { SalesRepository } from '@/application/repositories/sales-repository';
+import { PrismaSalesRepository } from './prisma/repositories/prisma-sales-repository';
+import { TransactionRepository } from '@/application/repositories/transaction-repository';
+import { PrismaTransactionRepository } from './prisma/repositories/prisma-transaction-repository';
 
 @Module({
   providers: [
@@ -28,6 +32,14 @@ import { PrismaCustomersRepository } from './prisma/repositories/prisma-customer
     {
       provide: CustomersRepository,
       useClass: PrismaCustomersRepository,
+    },
+    {
+      provide: SalesRepository,
+      useClass: PrismaSalesRepository,
+    },
+    {
+      provide: TransactionRepository,
+      useClass: PrismaTransactionRepository,
     },
     {
       provide: PrismaService,
@@ -53,6 +65,14 @@ import { PrismaCustomersRepository } from './prisma/repositories/prisma-customer
     {
       provide: CustomersRepository,
       useClass: PrismaCustomersRepository,
+    },
+    {
+      provide: SalesRepository,
+      useClass: PrismaSalesRepository,
+    },
+    {
+      provide: TransactionRepository,
+      useClass: PrismaTransactionRepository,
     },
     {
       provide: PrismaService,

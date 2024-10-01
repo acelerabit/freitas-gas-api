@@ -90,10 +90,11 @@ model Product {
   type      ProductType
   status    BottleStatus
   price     Int
+  quantity  Int
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
-  sales     Sales[]
+  sales     SalesProduct[]
 
   @@map("products")
 }
@@ -120,20 +121,30 @@ model Customer {
 model Sales {
   id            String        @id @default(uuid())
   paymentMethod PaymentMethod
-  quantity      Int
   total         Int
   createdAt     DateTime      @default(now()) @map("created_at")
-  
-  product       Product       @relation(fields: [productId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  productId     String        @map("product_id")
   
   customer      Customer      @relation(fields: [customerId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   customerId    String        @map("customer_id")
 
   returned      Boolean       @default(false)
 
+  products      SalesProduct[]
+
   @@map("sales")
 }
+model SalesProduct {
+  id        String   @id @default(uuid())
+  saleId    String   @map("sale_id")
+  productId String   @map("product_id")
+  quantity  Int
+
+  sale      Sales    @relation(fields: [saleId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+  @@map("sales_products")
+}
+
 
 model Transaction {
   id            String   @id @default(uuid())

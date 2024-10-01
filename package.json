@@ -10,6 +10,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "migration:run": "npx prisma migrate deploy",
     "db:seed": "node dist/prisma/seed",
+    "seed:customers": "npx ts-node prisma/seed-customers.ts",
     "db:seed:dev": "ts-node prisma/seed.ts",
     "start": "nest start",
     "start:dev": "nest start --watch",
