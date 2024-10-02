@@ -17,6 +17,7 @@ export abstract class SalesRepository {
     productId: string,
     quantityChange: number,
   ): Promise<void>;
+  abstract findById(id: string): Promise<Sale | null>;
   abstract createSalesProducts(
     saleId: string,
     products: { id: string; quantity: number }[],

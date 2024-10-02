@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Param } from '@nestjs/common';
 import { RegisterSaleUseCase } from '../../../../application/use-cases/sale/register-sale';
 import { Sale } from '../../../../application/entities/sale';
 import { Product } from '../../../../application/entities/product';
@@ -6,12 +6,14 @@ import { ProductType, BottleStatus } from '@prisma/client';
 import { SortType } from '@/application/repositories/sales-repository';
 import { FetchSalesUseCase } from '@/application/use-cases/sale/fetch-sales';
 import { SalesPresenters } from './presenters/sale.presenter';
+import { GetSaleUseCase } from '@/application/use-cases/sale/get-sale';
 
 @Controller('sales')
 export class SalesController {
   constructor(
     private registerSaleUseCase: RegisterSaleUseCase,
     private fetchSalesUseCase: FetchSalesUseCase,
+    private getSaleUseCase: GetSaleUseCase,
   ) {}
 
   @Post()
@@ -37,6 +39,15 @@ export class SalesController {
     await this.registerSaleUseCase.execute(sale);
 
     return { message: 'Venda registrada com sucesso' };
+  }
+
+  @Get('/:id')
+  async GetSale(@Param('id') id: string) {
+    const { sale } = await this.getSaleUseCase.execute({
+      id,
+    });
+
+    return SalesPresenters.toHTTP(sale);
   }
 
   @Get()
