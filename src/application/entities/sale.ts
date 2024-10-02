@@ -1,4 +1,6 @@
 import { Product } from '../entities/product';
+import { Customer } from './customer';
+import { User } from './user';
 
 export interface SaleProps {
   deliverymanId: string;
@@ -6,6 +8,9 @@ export interface SaleProps {
   paymentMethod: string;
   totalAmount: number;
   type: string;
+  customer?: Customer;
+  deliveryman?: User;
+  createdAt?: Date;
 }
 
 export class Sale {
@@ -14,6 +19,9 @@ export class Sale {
 
   constructor(customerId: string, props: SaleProps) {
     this._customerId = customerId;
+    this._props.createdAt = props.createdAt ?? new Date();
+    this._props.customer = props.customer ?? null;
+    this._props.deliveryman = props.deliveryman ?? null;
     this._props = props;
     this.calculateTotal();
   }
@@ -26,12 +34,28 @@ export class Sale {
     this._customerId = value;
   }
 
+  get customer(): Customer {
+    return this._props.customer;
+  }
+
+  set customer(value: Customer) {
+    this._props.customer = value;
+  }
+
   get deliverymanId(): string {
     return this._props.deliverymanId;
   }
 
   set deliverymanId(value: string) {
     this._props.deliverymanId = value;
+  }
+
+  get deliveryman(): User {
+    return this._props.deliveryman;
+  }
+
+  set deliveryman(value: User) {
+    this._props.deliveryman = value;
   }
 
   get products(): Product[] {
@@ -61,6 +85,14 @@ export class Sale {
 
   set type(value: string) {
     this._props.type = value;
+  }
+
+  get createdAt(): Date {
+    return this._props.createdAt;
+  }
+
+  set createdAt(value: Date) {
+    this._props.createdAt = value;
   }
 
   private calculateTotal(): void {

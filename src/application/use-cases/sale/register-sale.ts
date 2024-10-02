@@ -6,6 +6,7 @@ import { Transaction } from '../../entities/transaction';
 import { TransactionType, TransactionCategory } from '@prisma/client';
 import { CustomersRepository } from '@/application/repositories/customer-repository';
 import { BottleStatus } from '@prisma/client';
+import { UsersRepository } from '@/application/repositories/user-repository';
 
 @Injectable()
 export class RegisterSaleUseCase {
@@ -13,6 +14,7 @@ export class RegisterSaleUseCase {
     private readonly salesRepository: SalesRepository,
     private readonly transactionRepository: TransactionRepository,
     private readonly customerRepository: CustomersRepository,
+    private readonly usersRepository: UsersRepository,
   ) {}
 
   async execute(sale: Sale): Promise<void> {
@@ -27,12 +29,22 @@ export class RegisterSaleUseCase {
       );
     }
 
+    const deliverymanId = sale.deliverymanId;
+
+    const deliveryman = await this.usersRepository.findById(deliverymanId);
+
+    if (!deliveryman) {
+      throw new Error('Entrregador não encontrado');
+    }
+
     const saleWithCustomerId = new Sale(sale.customerId, {
       deliverymanId: sale.deliverymanId,
-      products: sale.products,
       paymentMethod: sale.paymentMethod,
+      products: sale.products,
       totalAmount: sale.totalAmount,
       type: sale.type,
+      customer: customer,
+      deliveryman: deliveryman,
     });
 
     if (saleWithCustomerId.isComodato() || saleWithCustomerId.isFull()) {

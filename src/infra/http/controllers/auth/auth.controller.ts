@@ -6,12 +6,6 @@ import { AuthenticateUserBody } from './dtos/authenticate-user-body';
 import { LoginWithGoogle } from '@/application/use-cases/authenticate/login-with-google';
 import { AuthenticateUserWithGoogleBody } from './dtos/authenticate-with-google-body';
 
-const interceptor = new LoggingInterceptor(new LoggingService(), [
-  'password',
-  'access_token',
-  'user.email',
-]);
-
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -19,7 +13,6 @@ export class AuthController {
     private loginWithGoogle: LoginWithGoogle,
   ) {}
 
-  // @UseInterceptors(interceptor)
   @Post('/login')
   async login(@Body() body: AuthenticateUserBody) {
     const { email, password } = body;
