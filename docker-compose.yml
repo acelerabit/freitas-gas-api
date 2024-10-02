@@ -3,19 +3,19 @@ version: '3.8'
 services:
   database:
     image: postgres:latest
-    container_name: setup_basic
+    container_name: freitas
     restart: always
     ports:
-      - "5442:5432"
+      - 5432:5432
     environment:
       - POSTGRES_USER=docker
-      - POSTGRES_PASSWORD=setup_basic_docker
+      - POSTGRES_PASSWORD=freitas_docker
       - POSTGRES_DB=basic
     volumes:
       - ./data/pg:/var/lib/postgresql/data
 
   redis:
-    container_name: setup_basic-redis
+    container_name: freitas-redis
     image: redis:alpine
     ports:
       - 6379:6379
@@ -35,3 +35,7 @@ volumes:
     driver: local
   pgdata:
     driver: local
+
+networks:
+  freitas-network:
+    driver: bridge

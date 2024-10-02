@@ -46,6 +46,7 @@ import { ListProductsUseCase } from '@/application/use-cases/product/find-all-pr
 import { GetProductByIdUseCase } from '@/application/use-cases/product/find-product-by-id';
 import { UpdateProductUseCase } from '@/application/use-cases/product/update-product';
 import { ProductController } from './controllers/product/products.controller';
+import { FetchSalesUseCase } from '@/application/use-cases/sale/fetch-sales';
 
 @Module({
   controllers: [
@@ -93,6 +94,7 @@ import { ProductController } from './controllers/product/products.controller';
     ListProductsUseCase,
     GetProductByIdUseCase,
     UpdateProductUseCase,
+    FetchSalesUseCase,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

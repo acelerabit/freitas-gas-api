@@ -1,4 +1,6 @@
 import { Product } from '../entities/product';
+import { Customer } from './customer';
+import { User } from './user';
 export class Sale {
   private _customerId: string;
   private _deliverymanId: string;
@@ -6,6 +8,9 @@ export class Sale {
   private _paymentMethod: string;
   private _totalAmount: number;
   private _type: string;
+  private _customer?: Customer;
+  private _deliveryman?: User;
+  private _createdAt?: Date;
 
   constructor(
     customerId: string,
@@ -14,6 +19,9 @@ export class Sale {
     paymentMethod: string,
     totalAmount: number,
     type: string,
+    customer?: Customer,
+    deliveryman?: User,
+    createdAt?: Date,
   ) {
     this._customerId = customerId;
     this._deliverymanId = deliverymanId;
@@ -21,6 +29,9 @@ export class Sale {
     this._paymentMethod = paymentMethod;
     this._totalAmount = totalAmount;
     this._type = type;
+    this._customer = customer ?? null;
+    this._deliveryman = deliveryman ?? null;
+    this._createdAt = createdAt ?? new Date();
     this.calculateTotal();
   }
 
@@ -30,6 +41,14 @@ export class Sale {
 
   get deliverymanId(): string {
     return this._deliverymanId;
+  }
+
+  get customer(): Customer {
+    return this._customer;
+  }
+
+  get deliveryman(): User {
+    return this._deliveryman;
   }
 
   get products(): Product[] {
@@ -48,6 +67,10 @@ export class Sale {
     return this._type;
   }
 
+  get createdAt(): Date {
+    return this._createdAt;
+  }
+
   setCustomerId(value: string): void {
     this._customerId = value;
   }
@@ -63,6 +86,10 @@ export class Sale {
 
   setPaymentMethod(value: string): void {
     this._paymentMethod = value;
+  }
+
+  setTotalAmount(value: number): void {
+    this._totalAmount = value;
   }
 
   setType(value: string): void {

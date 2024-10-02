@@ -55,7 +55,7 @@ model User {
   name                String
   email               String  @unique
   password            String?
-  status              Boolean  @default(true)
+  status              Boolean @default(true)
   avatarUrl           String? @map("avatar_url")
   acceptNotifications Boolean @default(true) @map("accept_notifications")
 
@@ -65,7 +65,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   notifications Notification[]
-  transactions Transaction[]
+  transactions  Transaction[]
 
   @@index([email])
   @@map("users")
@@ -86,34 +86,34 @@ model Notification {
 }
 
 model Product {
-  id        String   @id @default(uuid())
+  id        String       @id @default(uuid())
   type      ProductType
   status    BottleStatus
   price     Int
   quantity  Int
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
 
-  sales     SalesProduct[]
+  sales SalesProduct[]
 
   @@map("products")
 }
 
 model Customer {
-  id        String   @id @default(uuid())
-  name      String
-  email     String
-  phone     String
-  street    String
-  number    String
-  district String
-  city      String
-  state     String
-  creditBalance Int @default(0)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(uuid())
+  name          String
+  email         String
+  phone         String
+  street        String
+  number        String
+  district      String
+  city          String
+  state         String
+  creditBalance Int      @default(0)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  sales     Sales[]
+  sales Sales[]
 
   @@map("customers")
 }
@@ -123,46 +123,50 @@ model Sales {
   paymentMethod PaymentMethod
   total         Int
   createdAt     DateTime      @default(now()) @map("created_at")
-  
-  customer      Customer      @relation(fields: [customerId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  customerId    String        @map("customer_id")
 
-  returned      Boolean       @default(false)
+  customer   Customer @relation(fields: [customerId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  customerId String   @map("customer_id")
 
-  products      SalesProduct[]
+  returned Boolean @default(false)
+
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+  transactionId String?
+
+  products SalesProduct[]
 
   @@map("sales")
 }
+
 model SalesProduct {
-  id        String   @id @default(uuid())
-  saleId    String   @map("sale_id")
-  productId String   @map("product_id")
+  id        String @id @default(uuid())
+  saleId    String @map("sale_id")
+  productId String @map("product_id")
   quantity  Int
 
-  sale      Sales    @relation(fields: [saleId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  sale    Sales   @relation(fields: [saleId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onUpdate: Cascade, onDelete: Cascade)
 
   @@map("sales_products")
 }
 
-
 model Transaction {
-  id            String   @id @default(uuid())
-  amount        Int
+  id              String              @id @default(uuid())
+  amount          Int
   transactionType TransactionType
-  mainAccount   Boolean
-  category      TransactionCategory
-  createdAt     DateTime  @default(now()) @map("created_at")
+  mainAccount     Boolean
+  category        TransactionCategory
+  createdAt       DateTime            @default(now()) @map("created_at")
 
-  user          User      @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  userId        String    @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  userId String @map("user_id")
 
-  referenceId   String?
+  referenceId    String?
   customCategory String?
+
+  sales Sales[]
 
   @@map("transactions")
 }
-
 
 model Log {
   id String @id @default(uuid())

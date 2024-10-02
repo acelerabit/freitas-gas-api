@@ -32,8 +32,6 @@ export class InMemorySubscriptionRepository implements SubscriptionRepository {
   }
 
   async update(sub: Subscription): Promise<void> {
-    console.log(sub, 'SUB---');
-
     const subscriptionIndex = this.subs.findIndex(
       (subscription) => subscription.id === sub.id,
     );

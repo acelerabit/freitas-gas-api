@@ -5,6 +5,7 @@ import { Sale } from '../../entities/sale';
 import { Transaction } from '../../entities/transaction';
 import { TransactionType, TransactionCategory } from '@prisma/client';
 import { CustomersRepository } from '@/application/repositories/customer-repository';
+import { UsersRepository } from '@/application/repositories/user-repository';
 
 @Injectable()
 export class RegisterSaleUseCase {
@@ -12,6 +13,7 @@ export class RegisterSaleUseCase {
     private readonly salesRepository: SalesRepository,
     private readonly transactionRepository: TransactionRepository,
     private readonly customerRepository: CustomersRepository,
+    private readonly usersRepository: UsersRepository,
   ) {}
 
   async execute(sale: Sale) {
@@ -24,6 +26,14 @@ export class RegisterSaleUseCase {
       );
     }
 
+    const deliverymanId = sale.deliverymanId;
+
+    const deliveryman = await this.usersRepository.findById(deliverymanId);
+
+    if (!deliveryman) {
+      throw new Error('Entrregador não encontrado');
+    }
+
     const saleWithCustomerId = new Sale(
       customerId,
       sale.deliverymanId,
@@ -31,6 +41,8 @@ export class RegisterSaleUseCase {
       sale.paymentMethod,
       sale.totalAmount,
       sale.type,
+      customer,
+      deliveryman,
     );
 
     if (saleWithCustomerId.isComodato() || saleWithCustomerId.isFull()) {

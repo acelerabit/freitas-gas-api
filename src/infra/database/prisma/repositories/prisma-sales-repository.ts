@@ -1,8 +1,13 @@
+import { PrismaSalesMapper } from './../mappers/sale.mapper';
 import { PaymentMethod } from '@prisma/client';
-import { SalesRepository } from '../../../../application/repositories/sales-repository';
+import {
+  SalesRepository,
+  SortType,
+} from '../../../../application/repositories/sales-repository';
 import { Sale } from '../../../../application/entities/sale';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { PaginationParams } from '@/@shared/pagination-interface';
 
 @Injectable()
 export class PrismaSalesRepository extends SalesRepository {
@@ -56,5 +61,142 @@ export class PrismaSalesRepository extends SalesRepository {
       where: { id: productId },
       data: { quantity: newStock },
     });
+  }
+
+  async findAll(
+    deliveryman: string,
+    customer: string,
+    orderByField: SortType = 'customer',
+    orderDirection: 'desc' | 'asc' = 'desc',
+    filterParams?: {
+      saleType: 'EMPTY' | 'FULL' | 'COMODATO';
+      startDate: Date;
+      endDate: Date;
+    },
+    pagination?: PaginationParams,
+  ): Promise<Sale[]> {
+    let orderBy = {};
+
+    if (orderByField === 'customer') {
+      orderBy = {
+        ...orderBy,
+        customer: {
+          name: orderDirection,
+        },
+      };
+    }
+
+    if (orderByField === 'deliveryman') {
+      orderBy = {
+        ...orderBy,
+        transaction: {
+          user: {
+            name: orderDirection,
+          },
+        },
+      };
+    }
+
+    if (orderByField !== 'customer' && orderByField !== 'deliveryman') {
+      orderBy[orderByField] = orderDirection;
+    }
+
+    let whereFilter = {};
+
+    if (filterParams) {
+      if (filterParams.saleType) {
+        whereFilter = { ...whereFilter, saleType: filterParams.saleType };
+      }
+
+      if (filterParams.startDate && filterParams.endDate) {
+        whereFilter = {
+          ...whereFilter,
+          createdAt: {
+            gte: new Date(filterParams.startDate),
+            lte: new Date(filterParams.endDate),
+          },
+        };
+      }
+    }
+
+    if (deliveryman || customer) {
+      const raw = await this.prismaService.sales.findMany({
+        ...(pagination?.itemsPerPage ? { take: pagination.itemsPerPage } : {}),
+        ...(pagination?.page
+          ? { skip: (pagination.page - 1) * pagination.itemsPerPage }
+          : {}),
+        where: {
+          OR: [
+            {
+              customer: customer
+                ? {
+                    name: {
+                      contains: customer,
+                      mode: 'insensitive',
+                    },
+                  }
+                : {},
+            },
+            {
+              transaction: {
+                user: {
+                  name: deliveryman
+                    ? {
+                        contains: deliveryman,
+                        mode: 'insensitive',
+                      }
+                    : {},
+                },
+              },
+            },
+          ],
+          ...whereFilter,
+        },
+        include: {
+          customer: true,
+          products: {
+            include: {
+              product: true,
+              sale: true,
+            },
+          },
+          transaction: {
+            include: {
+              user: true,
+            },
+          },
+        },
+        orderBy: orderBy,
+      });
+
+      return raw.map(PrismaSalesMapper.toDomain);
+    }
+
+    const raw = await this.prismaService.sales.findMany({
+      ...(pagination?.itemsPerPage ? { take: pagination.itemsPerPage } : {}),
+      ...(pagination?.page
+        ? { skip: (pagination.page - 1) * pagination.itemsPerPage }
+        : {}),
+      where: {
+        ...whereFilter,
+      },
+      include: {
+        customer: true,
+        products: {
+          include: {
+            product: true,
+            sale: true,
+          },
+        },
+        transaction: {
+          include: {
+            user: true,
+          },
+        },
+      },
+      orderBy: orderBy,
+    });
+
+    return raw.map(PrismaSalesMapper.toDomain);
   }
 }
