@@ -18,6 +18,7 @@ export class PrismaSalesRepository extends SalesRepository {
   async createSale(sale: Sale): Promise<string> {
     const createdSale = await this.prismaService.sales.create({
       data: {
+        id: sale.id,
         customerId: sale.customerId,
         paymentMethod: sale.paymentMethod as PaymentMethod,
         total: sale.totalAmount,
@@ -36,6 +37,27 @@ export class PrismaSalesRepository extends SalesRepository {
       productId: product.id,
       quantity: product.quantity,
     }));
+
+    await this.prismaService.salesProduct.createMany({
+      data: salesProducts,
+    });
+  }
+
+  async updateSalesProducts(
+    saleId: string,
+    products: { id: string; quantity: number }[],
+  ): Promise<void> {
+    const salesProducts = products.map((product) => ({
+      saleId,
+      productId: product.id,
+      quantity: product.quantity,
+    }));
+
+    await this.prismaService.salesProduct.deleteMany({
+      where: {
+        saleId,
+      },
+    });
 
     await this.prismaService.salesProduct.createMany({
       data: salesProducts,
@@ -61,6 +83,34 @@ export class PrismaSalesRepository extends SalesRepository {
       where: { id: productId },
       data: { quantity: newStock },
     });
+  }
+
+  async findById(id: string): Promise<Sale | null> {
+    const raw = await this.prismaService.sales.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        customer: true,
+        products: {
+          include: {
+            product: true,
+            sale: true,
+          },
+        },
+        transaction: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    if (!raw) {
+      return null;
+    }
+
+    return PrismaSalesMapper.toDomain(raw);
   }
 
   async findAll(

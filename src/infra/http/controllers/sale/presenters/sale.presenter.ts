@@ -3,7 +3,8 @@ import { Sale } from '@/application/entities/sale';
 export class SalesPresenters {
   static toHTTP(sale: Sale) {
     return {
-      customer: sale.customer,
+      id: sale.id,
+      customer: sale.customer ?? null,
       deliveryman: sale.deliveryman,
       products: sale.products.map((product) => {
         return {

@@ -1,0 +1,104 @@
+import { Product } from '@/application/entities/product';
+import { CustomersRepository } from '@/application/repositories/customer-repository';
+import { UsersRepository } from '@/application/repositories/user-repository';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { BottleStatus } from '@prisma/client';
+import { Sale } from '../../entities/sale';
+import { SalesRepository } from '../../repositories/sales-repository';
+import { TransactionRepository } from '../../repositories/transaction-repository';
+
+interface UpdateSaleUseCaseProps {
+  saleId: string;
+  deliverymanId?: string;
+  customerId?: string;
+  products?: Product[];
+  paymentMethod?: string;
+  totalAmount?: number;
+  type?: string;
+}
+
+@Injectable()
+export class UpdateSaleUseCase {
+  constructor(
+    private readonly salesRepository: SalesRepository,
+    private readonly transactionRepository: TransactionRepository,
+    private readonly customerRepository: CustomersRepository,
+    private readonly usersRepository: UsersRepository,
+  ) {}
+
+  async execute({
+    saleId,
+    customerId,
+    deliverymanId,
+    paymentMethod,
+    products,
+    type,
+  }: UpdateSaleUseCaseProps): Promise<void> {
+    // const customer = await this.customerRepository.findById(customerId);
+    // const isComodato = products.some(
+    //   (product) => product.status === BottleStatus.COMODATO,
+    // );
+    // if (isComodato && customer.name === 'Cliente Genérico') {
+    //   throw new Error(
+    //     'Não é permitido utilizar o cliente "Cliente Genérico" para vendas em comodato.',
+    //   );
+    // }
+    // const deliveryman = await this.usersRepository.findById(deliverymanId);
+    // if (!deliveryman) {
+    //   throw new Error('Entregador não encontrado');
+    // }
+    // const sale = await this.salesRepository.findById(saleId);
+    // if (!sale) {
+    //   throw new BadRequestException('Não foi possivel editar a venda', {
+    //     cause: new Error('Venda não encontrada'),
+    //     description: 'Venda não encontrada',
+    //   });
+    // }
+    // const updates: Partial<Sale> = {};
+    // if (customerId) {
+    //   updates.customerId = customerId;
+    // }
+    // if (deliverymanId) {
+    //   updates.deliverymanId = deliverymanId;
+    // }
+    // if (customer) {
+    //   updates.customer = customer;
+    // }
+    // if (deliveryman) {
+    //   updates.deliveryman = deliveryman;
+    // }
+    // if (products) {
+    //   updates.products = products;
+    // }
+    // if (paymentMethod) {
+    //   updates.paymentMethod = paymentMethod;
+    // }
+    // if (type) {
+    //   updates.type = type;
+    // }
+    // Object.assign(sale, updates);
+    // await this.salesRepository.update(sale);
+    // if (sale.isComodato() || sale.isFull()) {
+    //   for (const product of sale.products) {
+    //     await this.salesRepository.updateStock(product.id, -product.quantity);
+    //   }
+    // }
+    // const saleProducts = sale.products.map((product) => ({
+    //   id: product.id,
+    //   quantity: product.quantity,
+    // }));
+    // await this.salesRepository.updateSalesProducts(saleId, saleProducts);
+    // const transaction = await this.transactionRepository.findById(
+    //   sale.transactionId,
+    // );
+    // transaction.deliverymanId = sale.deliverymanId;
+    // await this.transactionRepository.update(transaction);
+    // if (sale.isComodato()) {
+    //   this.generateComodatoTerm(sale);
+    // }
+  }
+
+  private generateComodatoTerm(sale: Sale): void {
+    console.log(`Gerar termo de comodato para o cliente ${sale.customerId}`);
+  }
+}

@@ -29,12 +29,10 @@ export class RegisterSaleUseCase {
       );
     }
 
-    const deliverymanId = sale.deliverymanId;
-
-    const deliveryman = await this.usersRepository.findById(deliverymanId);
+    const deliveryman = await this.usersRepository.findById(sale.deliverymanId);
 
     if (!deliveryman) {
-      throw new Error('Entrregador não encontrado');
+      throw new Error('Entregador não encontrado');
     }
 
     const saleWithCustomerId = new Sale(sale.customerId, {

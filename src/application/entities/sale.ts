@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Product } from '../entities/product';
 import { Customer } from './customer';
 import { User } from './user';
@@ -15,10 +16,12 @@ export interface SaleProps {
 
 export class Sale {
   private _customerId: string;
+  private _id: string;
   private _props: SaleProps;
 
-  constructor(customerId: string, props: SaleProps) {
+  constructor(customerId: string, props: SaleProps, id?: string) {
     this._customerId = customerId;
+    this._id = id ?? randomUUID();
     this._props = {
       ...props,
       createdAt: props.createdAt ?? new Date(),
@@ -27,6 +30,10 @@ export class Sale {
     };
 
     this.calculateTotal();
+  }
+
+  get id(): string {
+    return this._id;
   }
 
   get customerId(): string {
