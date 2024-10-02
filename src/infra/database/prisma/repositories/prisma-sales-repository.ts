@@ -163,8 +163,8 @@ export class PrismaSalesRepository extends SalesRepository {
           transaction: {
             include: {
               user: true,
-            },
-          },
+            }
+          }
         },
         orderBy: orderBy,
       });
