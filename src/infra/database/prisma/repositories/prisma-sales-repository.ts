@@ -57,4 +57,10 @@ export class PrismaSalesRepository extends SalesRepository {
       data: { quantity: newStock },
     });
   }
+
+  async deleteSale(saleId: string): Promise<void> {
+    await this.prismaService.sales.delete({
+      where: { id: saleId },
+    });
+  }
 }

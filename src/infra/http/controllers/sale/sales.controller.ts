@@ -1,12 +1,16 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Delete, Param } from '@nestjs/common';
 import { RegisterSaleUseCase } from '../../../../application/use-cases/sale/register-sale';
 import { Sale } from '../../../../application/entities/sale';
 import { Product } from '../../../../application/entities/product';
 import { ProductType, BottleStatus } from '@prisma/client';
+import { DeleteSaleUseCase } from '@/application/use-cases/sale/delete-sale';
 
 @Controller('sales')
 export class SalesController {
-  constructor(private registerSaleUseCase: RegisterSaleUseCase) {}
+  constructor(
+    private registerSaleUseCase: RegisterSaleUseCase,
+    private deleteSaleUseCase: DeleteSaleUseCase
+  ) {}
 
   @Post()
   async registerSale(@Body() body) {
@@ -31,5 +35,10 @@ export class SalesController {
     await this.registerSaleUseCase.execute(sale);
 
     return { message: 'Venda registrada com sucesso' };
+  }
+
+  @Delete(':id')
+  async deleteSale(@Param('id') saleId: string): Promise<void> {
+    await this.deleteSaleUseCase.execute(saleId);
   }
 }

@@ -10,4 +10,5 @@ export abstract class SalesRepository {
     saleId: string,
     products: { id: string; quantity: number }[],
   ): Promise<void>;
+  abstract deleteSale(saleId: string): Promise<void>;
 }

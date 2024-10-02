@@ -47,6 +47,7 @@ import { GetProductByIdUseCase } from '@/application/use-cases/product/find-prod
 import { UpdateProductUseCase } from '@/application/use-cases/product/update-product';
 import { ProductController } from './controllers/product/products.controller';
 import { FindAllCustomersWithoutPaginateUseCase } from '@/application/use-cases/customer/findAllCustomersWithoutPaginate';
+import { DeleteSaleUseCase } from '@/application/use-cases/sale/delete-sale';
 @Module({
   controllers: [
     UsersController,
@@ -94,6 +95,7 @@ import { FindAllCustomersWithoutPaginateUseCase } from '@/application/use-cases/
     GetProductByIdUseCase,
     UpdateProductUseCase,
     FindAllCustomersWithoutPaginateUseCase,
+    DeleteSaleUseCase
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })
