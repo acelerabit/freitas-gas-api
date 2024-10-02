@@ -19,10 +19,13 @@ export class Sale {
 
   constructor(customerId: string, props: SaleProps) {
     this._customerId = customerId;
-    this._props.createdAt = props.createdAt ?? new Date();
-    this._props.customer = props.customer ?? null;
-    this._props.deliveryman = props.deliveryman ?? null;
-    this._props = props;
+    this._props = {
+      ...props,
+      createdAt: props.createdAt ?? new Date(),
+      customer: props.customer ?? null,
+      deliveryman: props.deliveryman ?? null,
+    };
+
     this.calculateTotal();
   }
 
