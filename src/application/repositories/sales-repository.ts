@@ -34,4 +34,5 @@ export abstract class SalesRepository {
     },
     pagination?: PaginationParams,
   ): Promise<Sale[]>;
+  abstract deleteSale(saleId: string): Promise<void>;
 }

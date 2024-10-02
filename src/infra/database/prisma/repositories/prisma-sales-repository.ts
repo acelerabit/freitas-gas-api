@@ -84,7 +84,6 @@ export class PrismaSalesRepository extends SalesRepository {
       data: { quantity: newStock },
     });
   }
-
   async findById(id: string): Promise<Sale | null> {
     const raw = await this.prismaService.sales.findUnique({
       where: {
@@ -213,8 +212,8 @@ export class PrismaSalesRepository extends SalesRepository {
           transaction: {
             include: {
               user: true,
-            }
-          }
+            },
+          },
         },
         orderBy: orderBy,
       });
@@ -248,5 +247,10 @@ export class PrismaSalesRepository extends SalesRepository {
     });
 
     return raw.map(PrismaSalesMapper.toDomain);
+  }
+  async deleteSale(saleId: string): Promise<void> {
+    await this.prismaService.sales.delete({
+      where: { id: saleId },
+    });
   }
 }
