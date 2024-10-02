@@ -12,23 +12,21 @@ export class SalesController {
   async registerSale(@Body() body) {
     const products = body.products.map(
       (product) =>
-        new Product(
-          product.productId,
-          product.type as ProductType,
-          product.status as BottleStatus,
-          product.price,
-          product.quantity,
-        ),
+        new Product(product.productId, {
+          type: product.type as ProductType,
+          status: product.status as BottleStatus,
+          price: product.price,
+          quantity: product.quantity,
+        }),
     );
 
-    const sale = new Sale(
-      body.customerId,
-      body.deliverymanId,
+    const sale = new Sale(body.customerId, {
+      deliverymanId: body.deliverymanId,
       products,
-      body.paymentMethod,
-      0,
-      'FULL',
-    );
+      paymentMethod: body.paymentMethod,
+      totalAmount: 0,
+      type: 'FULL',
+    });
 
     await this.registerSaleUseCase.execute(sale);
 

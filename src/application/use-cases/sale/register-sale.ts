@@ -5,6 +5,7 @@ import { Sale } from '../../entities/sale';
 import { Transaction } from '../../entities/transaction';
 import { TransactionType, TransactionCategory } from '@prisma/client';
 import { CustomersRepository } from '@/application/repositories/customer-repository';
+import { BottleStatus } from '@prisma/client';
 
 @Injectable()
 export class RegisterSaleUseCase {
@@ -14,24 +15,25 @@ export class RegisterSaleUseCase {
     private readonly customerRepository: CustomersRepository,
   ) {}
 
-  async execute(sale: Sale) {
-    const customerId = sale.customerId;
+  async execute(sale: Sale): Promise<void> {
+    const customer = await this.customerRepository.findById(sale.customerId);
+    const isComodato = sale.products.some(
+      (product) => product.status === BottleStatus.COMODATO,
+    );
 
-    const customer = await this.customerRepository.findById(customerId);
-    if (sale.isComodato() && customer.name === 'Cliente Genérico') {
+    if (isComodato && customer.name === 'Cliente Genérico') {
       throw new Error(
         'Não é permitido utilizar o cliente "Cliente Genérico" para vendas em comodato.',
       );
     }
 
-    const saleWithCustomerId = new Sale(
-      customerId,
-      sale.deliverymanId,
-      sale.products,
-      sale.paymentMethod,
-      sale.totalAmount,
-      sale.type,
-    );
+    const saleWithCustomerId = new Sale(sale.customerId, {
+      deliverymanId: sale.deliverymanId,
+      products: sale.products,
+      paymentMethod: sale.paymentMethod,
+      totalAmount: sale.totalAmount,
+      type: sale.type,
+    });
 
     if (saleWithCustomerId.isComodato() || saleWithCustomerId.isFull()) {
       for (const product of saleWithCustomerId.products) {
@@ -48,14 +50,13 @@ export class RegisterSaleUseCase {
 
     await this.salesRepository.createSalesProducts(saleId, saleProducts);
 
-    const transaction = new Transaction(
-      saleWithCustomerId.totalAmount,
-      TransactionType.EXIT,
-      false,
-      TransactionCategory.SALE,
-      saleWithCustomerId.deliverymanId,
-      saleId,
-    );
+    const transaction = new Transaction(saleWithCustomerId.totalAmount, {
+      transactionType: TransactionType.EXIT,
+      mainAccount: false,
+      category: TransactionCategory.SALE,
+      userId: saleWithCustomerId.deliverymanId,
+      referenceId: saleId,
+    });
 
     await this.transactionRepository.createTransaction(transaction);
 
@@ -64,7 +65,7 @@ export class RegisterSaleUseCase {
     }
   }
 
-  private generateComodatoTerm(sale: Sale) {
+  private generateComodatoTerm(sale: Sale): void {
     console.log(`Gerar termo de comodato para o cliente ${sale.customerId}`);
   }
 }

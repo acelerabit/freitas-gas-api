@@ -1,57 +1,52 @@
 import { TransactionType, TransactionCategory } from '@prisma/client';
 
+export interface TransactionProps {
+  transactionType: TransactionType;
+  mainAccount: boolean;
+  category: TransactionCategory;
+  userId: string;
+  referenceId?: string;
+  customCategory?: string;
+}
+
 export class Transaction {
   private _amount: number;
-  private _transactionType: TransactionType;
-  private _mainAccount: boolean;
-  private _category: TransactionCategory;
-  private _userId: string;
-  private _referenceId?: string;
-  private _customCategory?: string;
+  private _props: TransactionProps;
 
-  constructor(
-    amount: number,
-    transactionType: TransactionType,
-    mainAccount: boolean,
-    category: TransactionCategory,
-    userId: string,
-    referenceId?: string,
-    customCategory?: string,
-  ) {
+  constructor(amount: number, props: TransactionProps) {
     this._amount = amount;
-    this._transactionType = transactionType;
-    this._mainAccount = mainAccount;
-    this._category = category;
-    this._userId = userId;
-    this._referenceId = referenceId;
-    this._customCategory = customCategory;
+    this._props = props;
   }
 
   get amount(): number {
     return this._amount;
   }
 
+  set amount(value: number) {
+    this._amount = value;
+  }
+
   get transactionType(): TransactionType {
-    return this._transactionType;
+    return this._props.transactionType;
   }
 
   get mainAccount(): boolean {
-    return this._mainAccount;
+    return this._props.mainAccount;
   }
 
   get category(): TransactionCategory {
-    return this._category;
+    return this._props.category;
   }
 
   get userId(): string {
-    return this._userId;
+    return this._props.userId;
   }
 
   get referenceId(): string | undefined {
-    return this._referenceId;
+    return this._props.referenceId;
   }
 
   get customCategory(): string | undefined {
-    return this._customCategory;
+    return this._props.customCategory;
   }
 }

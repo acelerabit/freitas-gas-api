@@ -13,13 +13,12 @@ export class PrismaProductRepository extends ProductRepository {
     const products = await this.prismaService.product.findMany();
     return products.map(
       (product) =>
-        new Product(
-          product.id,
-          product.type,
-          product.status,
-          product.price,
-          product.quantity,
-        ),
+        new Product(product.id, {
+          type: product.type,
+          status: product.status,
+          price: product.price,
+          quantity: product.quantity,
+        }),
     );
   }
 
@@ -30,13 +29,12 @@ export class PrismaProductRepository extends ProductRepository {
     if (!product) {
       return null;
     }
-    return new Product(
-      product.id,
-      product.type,
-      product.status,
-      product.price,
-      product.quantity,
-    );
+    return new Product(product.id, {
+      type: product.type,
+      status: product.status,
+      price: product.price,
+      quantity: product.quantity,
+    });
   }
 
   async createProduct(product: Product): Promise<void> {

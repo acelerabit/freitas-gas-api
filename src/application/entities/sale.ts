@@ -1,26 +1,20 @@
 import { Product } from '../entities/product';
+
+export interface SaleProps {
+  deliverymanId: string;
+  products: Product[];
+  paymentMethod: string;
+  totalAmount: number;
+  type: string;
+}
+
 export class Sale {
   private _customerId: string;
-  private _deliverymanId: string;
-  private _products: Product[];
-  private _paymentMethod: string;
-  private _totalAmount: number;
-  private _type: string;
+  private _props: SaleProps;
 
-  constructor(
-    customerId: string,
-    deliverymanId: string,
-    products: Product[],
-    paymentMethod: string,
-    totalAmount: number,
-    type: string,
-  ) {
+  constructor(customerId: string, props: SaleProps) {
     this._customerId = customerId;
-    this._deliverymanId = deliverymanId;
-    this._products = products;
-    this._paymentMethod = paymentMethod;
-    this._totalAmount = totalAmount;
-    this._type = type;
+    this._props = props;
     this.calculateTotal();
   }
 
@@ -28,58 +22,58 @@ export class Sale {
     return this._customerId;
   }
 
-  get deliverymanId(): string {
-    return this._deliverymanId;
-  }
-
-  get products(): Product[] {
-    return this._products;
-  }
-
-  get paymentMethod(): string {
-    return this._paymentMethod;
-  }
-
-  get totalAmount(): number {
-    return this._totalAmount;
-  }
-
-  get type(): string {
-    return this._type;
-  }
-
-  setCustomerId(value: string): void {
+  set customerId(value: string) {
     this._customerId = value;
   }
 
-  setDeliverymanId(value: string): void {
-    this._deliverymanId = value;
+  get deliverymanId(): string {
+    return this._props.deliverymanId;
   }
 
-  setProducts(value: Product[]): void {
-    this._products = value;
+  set deliverymanId(value: string) {
+    this._props.deliverymanId = value;
+  }
+
+  get products(): Product[] {
+    return this._props.products;
+  }
+
+  set products(value: Product[]) {
+    this._props.products = value;
     this.calculateTotal();
   }
 
-  setPaymentMethod(value: string): void {
-    this._paymentMethod = value;
+  get paymentMethod(): string {
+    return this._props.paymentMethod;
   }
 
-  setType(value: string): void {
-    this._type = value;
+  set paymentMethod(value: string) {
+    this._props.paymentMethod = value;
+  }
+
+  get totalAmount(): number {
+    return this._props.totalAmount;
+  }
+
+  get type(): string {
+    return this._props.type;
+  }
+
+  set type(value: string) {
+    this._props.type = value;
   }
 
   private calculateTotal(): void {
-    this._totalAmount = this._products.reduce((total, product) => {
+    this._props.totalAmount = this._props.products.reduce((total, product) => {
       return total + product.price * product.quantity;
     }, 0);
   }
 
   isComodato(): boolean {
-    return this._type === 'COMODATO';
+    return this._props.type === 'COMODATO';
   }
 
   isFull(): boolean {
-    return this._type === 'FULL';
+    return this._props.type === 'FULL';
   }
 }
