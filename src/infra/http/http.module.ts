@@ -101,7 +101,7 @@ import { UpdateSaleUseCase } from '@/application/use-cases/sale/update-sale';
     FindAllCustomersWithoutPaginateUseCase,
     FetchSalesUseCase,
     GetSaleUseCase,
-    DeleteSaleUseCase
+    DeleteSaleUseCase,
     UpdateSaleUseCase,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
