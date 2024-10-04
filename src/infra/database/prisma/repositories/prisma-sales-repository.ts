@@ -23,6 +23,7 @@ export class PrismaSalesRepository extends SalesRepository {
         paymentMethod: sale.paymentMethod as PaymentMethod,
         total: sale.totalAmount,
         returned: false,
+        transactionId: sale.transactionId,
       },
     });
     return createdSale.id;
@@ -30,10 +31,11 @@ export class PrismaSalesRepository extends SalesRepository {
 
   async createSalesProducts(
     saleId: string,
-    products: { id: string; quantity: number }[],
+    products: { id: string; quantity: number; salePrice: number }[],
   ): Promise<void> {
     const salesProducts = products.map((product) => ({
       saleId,
+      salePrice: product.salePrice,
       productId: product.id,
       quantity: product.quantity,
     }));
@@ -45,12 +47,14 @@ export class PrismaSalesRepository extends SalesRepository {
 
   async updateSalesProducts(
     saleId: string,
-    products: { id: string; quantity: number }[],
+    products: { id: string; quantity: number; salePrice: number }[],
   ): Promise<void> {
+    console.log(products);
     const salesProducts = products.map((product) => ({
       saleId,
       productId: product.id,
       quantity: product.quantity,
+      salePrice: product.salePrice,
     }));
 
     await this.prismaService.salesProduct.deleteMany({
@@ -248,5 +252,18 @@ export class PrismaSalesRepository extends SalesRepository {
     });
 
     return raw.map(PrismaSalesMapper.toDomain);
+  }
+
+  async update(sale: Sale): Promise<void> {
+    const toPrisma = PrismaSalesMapper.toPrisma(sale);
+
+    await this.prismaService.sales.update({
+      where: {
+        id: sale.id,
+      },
+      data: {
+        ...toPrisma,
+      },
+    });
   }
 }

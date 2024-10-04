@@ -1,5 +1,5 @@
 import { Sale } from 'src/application/entities/sale';
-import { Prisma } from '@prisma/client';
+import { PaymentMethod, Prisma } from '@prisma/client';
 import { Product } from '@/application/entities/product';
 
 export class PrismaSalesMapper {
@@ -7,12 +7,14 @@ export class PrismaSalesMapper {
     const newSale = new Sale(
       sale.customerId,
       {
-        deliverymanId: sale.deliverymanId,
+        deliverymanId: sale.transaction.userId,
         paymentMethod: sale.paymentMethod,
         products: sale.products.map((product) => {
           return new Product(product.id, {
+            productId: product.productId,
+            salePrice: product.salePrice,
             price: product.product.price,
-            quantity: product.product.quantity,
+            quantity: product.quantity,
             status: product.product.status,
             type: product.product.type,
           });
@@ -22,10 +24,22 @@ export class PrismaSalesMapper {
         createdAt: sale.createdAt,
         customer: sale.customer ?? null,
         deliveryman: sale?.transaction?.user ?? null,
+        transactionId: sale?.transaction?.id,
       },
       sale.id,
     );
 
     return newSale;
+  }
+
+  static toPrisma(sale: Sale) {
+    return {
+      id: sale.id,
+      paymentMethod: sale.paymentMethod as PaymentMethod,
+      total: sale.totalAmount,
+      customerId: sale.customerId,
+      transactionId: sale.transactionId,
+      createdAt: sale.createdAt,
+    };
   }
 }

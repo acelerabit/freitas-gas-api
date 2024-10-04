@@ -1,3 +1,4 @@
+import { Product } from '@/application/entities/product';
 import { PaginationParams } from '@/@shared/pagination-interface';
 import { Sale } from '../entities/sale';
 
@@ -34,4 +35,12 @@ export abstract class SalesRepository {
     },
     pagination?: PaginationParams,
   ): Promise<Sale[]>;
+  abstract update(sale: Sale): Promise<void>;
+  abstract updateSalesProducts(
+    saleId: string,
+    saleProducts: {
+      id: string;
+      quantity: number;
+    }[],
+  ): Promise<void>;
 }

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Param, Put } from '@nestjs/common';
 import { RegisterSaleUseCase } from '../../../../application/use-cases/sale/register-sale';
 import { Sale } from '../../../../application/entities/sale';
 import { Product } from '../../../../application/entities/product';
@@ -7,6 +7,8 @@ import { SortType } from '@/application/repositories/sales-repository';
 import { FetchSalesUseCase } from '@/application/use-cases/sale/fetch-sales';
 import { SalesPresenters } from './presenters/sale.presenter';
 import { GetSaleUseCase } from '@/application/use-cases/sale/get-sale';
+import { UpdateSaleBody } from './dtos/update-sale-body';
+import { UpdateSaleUseCase } from '@/application/use-cases/sale/update-sale';
 
 @Controller('sales')
 export class SalesController {
@@ -14,6 +16,7 @@ export class SalesController {
     private registerSaleUseCase: RegisterSaleUseCase,
     private fetchSalesUseCase: FetchSalesUseCase,
     private getSaleUseCase: GetSaleUseCase,
+    private updateSaleUseCase: UpdateSaleUseCase,
   ) {}
 
   @Post()
@@ -39,6 +42,24 @@ export class SalesController {
     await this.registerSaleUseCase.execute(sale);
 
     return { message: 'Venda registrada com sucesso' };
+  }
+
+  @Put('/:saleId')
+  async editSale(
+    @Param('saleId') saleId: string,
+    @Body()
+    body: UpdateSaleBody,
+  ) {
+    const { customerId, deliverymanId, paymentMethod, products } = body;
+    await this.updateSaleUseCase.execute({
+      saleId,
+      customerId,
+      // deliverymanId,
+      paymentMethod,
+      products,
+    });
+
+    return;
   }
 
   @Get('/:id')
