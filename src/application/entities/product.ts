@@ -5,6 +5,8 @@ export interface ProductProps {
   status: BottleStatus;
   price: number;
   quantity: number;
+  productId?: string;
+  salePrice?: number;
 }
 
 export class Product {
@@ -34,6 +36,22 @@ export class Product {
 
   set price(price: number) {
     this._props.price = price;
+  }
+
+  get salePrice(): number {
+    return this._props.salePrice;
+  }
+
+  set salePrice(salePrice: number) {
+    this._props.salePrice = salePrice;
+  }
+
+  get productId(): string {
+    return this._props.productId;
+  }
+
+  set productId(productId: string) {
+    this._props.productId = productId;
   }
 
   get quantity(): number {

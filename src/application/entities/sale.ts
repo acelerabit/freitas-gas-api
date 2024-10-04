@@ -12,6 +12,7 @@ export interface SaleProps {
   customer?: Customer;
   deliveryman?: User;
   createdAt?: Date;
+  transactionId?: string;
 }
 
 export class Sale {
@@ -29,7 +30,7 @@ export class Sale {
       deliveryman: props.deliveryman ?? null,
     };
 
-    this.calculateTotal();
+    // this.calculateTotal();
   }
 
   get id(): string {
@@ -68,13 +69,21 @@ export class Sale {
     this._props.deliveryman = value;
   }
 
+  get transactionId(): string {
+    return this._props.transactionId;
+  }
+
+  set transactionId(value: string) {
+    this._props.transactionId = value;
+  }
+
   get products(): Product[] {
     return this._props.products;
   }
 
   set products(value: Product[]) {
     this._props.products = value;
-    this.calculateTotal();
+    // this.calculateTotal();
   }
 
   get paymentMethod(): string {
@@ -105,9 +114,16 @@ export class Sale {
     this._props.createdAt = value;
   }
 
-  private calculateTotal(): void {
+  calculateTotal(): void {
     this._props.totalAmount = this._props.products.reduce((total, product) => {
+      console.log(product);
       return total + product.price * product.quantity;
+    }, 0);
+  }
+
+  calculateTotalUpdate(): void {
+    this._props.totalAmount = this._props.products.reduce((total, product) => {
+      return total + product.salePrice * product.quantity;
     }, 0);
   }
 

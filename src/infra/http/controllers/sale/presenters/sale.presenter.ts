@@ -7,12 +7,15 @@ export class SalesPresenters {
       customer: sale.customer ?? null,
       deliveryman: sale.deliveryman,
       products: sale.products.map((product) => {
+        // console.log(product);
         return {
           id: product.id,
           type: product.type,
           price: product.price,
           quantity: product.quantity,
           status: product.status,
+          productId: product.productId,
+          salePrice: product.salePrice,
         };
       }),
       paymentMethod: sale.paymentMethod,

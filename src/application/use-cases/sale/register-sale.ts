@@ -51,16 +51,20 @@ export class RegisterSaleUseCase {
       }
     }
 
+    saleWithCustomerId.calculateTotal();
+
     const saleId = await this.salesRepository.createSale(saleWithCustomerId);
 
     const saleProducts = saleWithCustomerId.products.map((product) => ({
       id: product.id,
+      salePrice: product.price,
       quantity: product.quantity,
     }));
 
     await this.salesRepository.createSalesProducts(saleId, saleProducts);
 
-    const transaction = new Transaction(saleWithCustomerId.totalAmount, {
+    const transaction = new Transaction({
+      amount: saleWithCustomerId.totalAmount,
       transactionType: TransactionType.EXIT,
       mainAccount: false,
       category: TransactionCategory.SALE,
@@ -69,6 +73,11 @@ export class RegisterSaleUseCase {
     });
 
     await this.transactionRepository.createTransaction(transaction);
+
+    saleWithCustomerId.transactionId = transaction.id;
+    saleWithCustomerId.deliverymanId = transaction.userId;
+
+    await this.salesRepository.update(saleWithCustomerId);
 
     if (saleWithCustomerId.isComodato()) {
       this.generateComodatoTerm(saleWithCustomerId);
