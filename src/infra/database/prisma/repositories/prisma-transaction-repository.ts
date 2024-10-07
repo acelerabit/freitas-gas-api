@@ -3,6 +3,7 @@ import { Transaction } from '../../../../application/entities/transaction';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { PrismaTransactionsMapper } from '../mappers/transaction.mapper';
+import { PaginationParams } from '@/@shared/pagination-interface';
 
 @Injectable()
 export class PrismaTransactionRepository extends TransactionRepository {
@@ -15,7 +16,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
       id: transaction.id,
       amount: transaction.amount,
       transactionType: transaction.transactionType,
-      mainAccount: transaction.mainAccount ?? false,
+      //mainAccount: transaction.mainAccount ?? false,
       category: transaction.category,
       userId: transaction.userId,
       referenceId: transaction.referenceId ?? null,
@@ -26,6 +27,17 @@ export class PrismaTransactionRepository extends TransactionRepository {
     await this.prismaService.transaction.create({
       data: transactionData,
     });
+  }
+
+  async findAll(pagination: PaginationParams): Promise<Transaction[]> {
+    const transactions = await this.prismaService.transaction.findMany({
+      take: Number(pagination.itemsPerPage),
+      skip: (pagination.page - 1) * Number(pagination.itemsPerPage),
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    return transactions.map(PrismaTransactionsMapper.toDomain);
   }
 
   async findById(id: string): Promise<Transaction | null> {

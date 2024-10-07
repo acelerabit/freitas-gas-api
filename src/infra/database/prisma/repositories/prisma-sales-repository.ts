@@ -49,7 +49,6 @@ export class PrismaSalesRepository extends SalesRepository {
     saleId: string,
     products: { id: string; quantity: number; salePrice: number }[],
   ): Promise<void> {
-    console.log(products);
     const salesProducts = products.map((product) => ({
       saleId,
       productId: product.id,

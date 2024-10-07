@@ -27,6 +27,7 @@ import { FetchUsers } from '@/application/use-cases/user/fetch-users';
 import { UsersPresenters } from './presenters/user.presenter';
 import { DeleteUser } from '@/application/use-cases/user/delete-user';
 import { Auth } from 'src/infra/decorators/auth.decorator';
+import { FetchAllUsers } from '@/application/use-cases/user/fetch-all-user';
 
 /** If you want catch data from requests and responses, enable it */
 
@@ -45,6 +46,7 @@ export class UsersController {
     private updateUser: UpdateUser,
     private fetchUsers: FetchUsers,
     private deleteUser: DeleteUser,
+    private fetchAllUsers: FetchAllUsers,
     @InjectQueue(EMAIL_QUEUE) private sendMailQueue: Queue,
   ) {}
 
@@ -82,16 +84,6 @@ export class UsersController {
     });
 
     return users.map(UsersPresenters.toHTTP);
-  }
-
-  @Auth(Role.ADMIN)
-  @Get('/:id')
-  async get(@Param('id') id: string) {
-    const { user } = await this.getUser.execute({
-      id,
-    });
-
-    return UsersPresenters.toHTTP(user);
   }
 
   @Post('/by-email')
@@ -135,5 +127,20 @@ export class UsersController {
   async delete(@Param('id') id: string) {
     await this.deleteUser.execute({ id });
     return { message: 'User deleted successfully' };
+  }
+
+  @Get('/all')
+  async findAll() {
+    const users = await this.fetchAllUsers.execute();
+    return users;
+  }
+
+  @Auth(Role.ADMIN)
+  @Get('/:id')
+  async get(@Param('id') id: string) {
+    const { user } = await this.getUser.execute({
+      id,
+    });
+    return UsersPresenters.toHTTP(user);
   }
 }

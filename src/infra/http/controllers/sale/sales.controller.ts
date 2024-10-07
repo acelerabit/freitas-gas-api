@@ -8,6 +8,8 @@ import {
   Put,
   Delete,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
+import { Auth } from 'src/infra/decorators/auth.decorator';
 import { RegisterSaleUseCase } from '../../../../application/use-cases/sale/register-sale';
 import { Sale } from '../../../../application/entities/sale';
 import { Product } from '../../../../application/entities/product';
@@ -55,6 +57,7 @@ export class SalesController {
     return { message: 'Venda registrada com sucesso' };
   }
 
+  @Auth(Role.ADMIN)
   @Put('/:saleId')
   async editSale(
     @Param('saleId') saleId: string,
@@ -127,6 +130,7 @@ export class SalesController {
     return sales.map(SalesPresenters.toHTTP);
   }
 
+  @Auth(Role.ADMIN)
   @Delete(':id')
   async deleteSale(@Param('id') saleId: string): Promise<void> {
     await this.deleteSaleUseCase.execute(saleId);
