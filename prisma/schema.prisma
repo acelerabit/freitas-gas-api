@@ -154,7 +154,7 @@ model Transaction {
   id              String              @id @default(uuid())
   amount          Int
   transactionType TransactionType
-  mainAccount     Boolean
+  mainAccount     Boolean?
   category        TransactionCategory
   createdAt       DateTime            @default(now()) @map("created_at")
 

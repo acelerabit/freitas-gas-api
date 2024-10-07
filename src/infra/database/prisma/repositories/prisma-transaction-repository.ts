@@ -54,4 +54,12 @@ export class PrismaTransactionRepository extends TransactionRepository {
       },
     });
   }
+
+  async delete(id: string): Promise<void> {
+    await this.prismaService.transaction.delete({
+      where: {
+        id,
+      },
+    });
+  }
 }

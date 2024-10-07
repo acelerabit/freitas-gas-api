@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 
 export interface TransactionProps {
   transactionType: TransactionType;
-  mainAccount: boolean;
+  mainAccount?: boolean;
   category: TransactionCategory;
   userId: string;
   referenceId?: string;

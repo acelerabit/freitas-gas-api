@@ -51,6 +51,8 @@ import { FetchSalesUseCase } from '@/application/use-cases/sale/fetch-sales';
 import { GetSaleUseCase } from '@/application/use-cases/sale/get-sale';
 import { DeleteSaleUseCase } from '@/application/use-cases/sale/delete-sale';
 import { UpdateSaleUseCase } from '@/application/use-cases/sale/update-sale';
+import { TransactionsController } from './controllers/transactions/transaction.controller';
+import { DeleteTransaction } from '@/application/use-cases/transaction/delete-transaction';
 
 @Module({
   controllers: [
@@ -64,6 +66,7 @@ import { UpdateSaleUseCase } from '@/application/use-cases/sale/update-sale';
     CustomerController,
     SalesController,
     ProductController,
+    TransactionsController,
   ],
   providers: [
     CreateUser,
@@ -103,6 +106,8 @@ import { UpdateSaleUseCase } from '@/application/use-cases/sale/update-sale';
     GetSaleUseCase,
     DeleteSaleUseCase,
     UpdateSaleUseCase,
+    CreateTransactionUseCase,
+    DeleteTransaction,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })
