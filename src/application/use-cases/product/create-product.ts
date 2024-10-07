@@ -8,7 +8,6 @@ export class CreateProductUseCase {
   constructor(private readonly productRepository: ProductRepository) {}
 
   async execute(data: {
-    id: string;
     type: ProductType;
     status: BottleStatus;
     price: number;
@@ -17,11 +16,12 @@ export class CreateProductUseCase {
     const productProps: ProductProps = {
       type: data.type,
       status: data.status,
-      price: data.price,
+      price: data.price * 100,
       quantity: data.quantity,
     };
 
-    const newProduct = new Product(data.id, productProps);
+    const newProduct = new Product(productProps);
+
     await this.productRepository.createProduct(newProduct);
   }
 }

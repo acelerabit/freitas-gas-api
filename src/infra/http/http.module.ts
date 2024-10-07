@@ -53,6 +53,8 @@ import { DeleteSaleUseCase } from '@/application/use-cases/sale/delete-sale';
 import { UpdateSaleUseCase } from '@/application/use-cases/sale/update-sale';
 import { TransactionsController } from './controllers/transactions/transaction.controller';
 import { DeleteTransaction } from '@/application/use-cases/transaction/delete-transaction';
+import { IncreaseProductQuantityUseCase } from '@/application/use-cases/product/increase-quantity';
+import { DecreaseProductQuantityUseCase } from '@/application/use-cases/product/decrease-quantity';
 
 @Module({
   controllers: [
@@ -108,6 +110,8 @@ import { DeleteTransaction } from '@/application/use-cases/transaction/delete-tr
     UpdateSaleUseCase,
     CreateTransactionUseCase,
     DeleteTransaction,
+    IncreaseProductQuantityUseCase,
+    DecreaseProductQuantityUseCase,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })
