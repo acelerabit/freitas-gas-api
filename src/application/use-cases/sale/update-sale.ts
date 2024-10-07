@@ -67,13 +67,16 @@ export class UpdateSaleUseCase {
 
     const productsFormatted = products.map(
       (product) =>
-        new Product(product.productId, {
-          type: product.type as ProductType,
-          status: product.status as BottleStatus,
-          price: product.price,
-          salePrice: product.salePrice,
-          quantity: product.quantity,
-        }),
+        new Product(
+          {
+            type: product.type as ProductType,
+            status: product.status as BottleStatus,
+            price: product.price,
+            salePrice: product.salePrice,
+            quantity: product.quantity,
+          },
+          product.productId,
+        ),
     );
 
     const updates: Partial<Sale> = {};

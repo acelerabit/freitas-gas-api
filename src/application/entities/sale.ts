@@ -116,7 +116,6 @@ export class Sale {
 
   calculateTotal(): void {
     this._props.totalAmount = this._props.products.reduce((total, product) => {
-      console.log(product);
       return total + product.price * product.quantity;
     }, 0);
   }

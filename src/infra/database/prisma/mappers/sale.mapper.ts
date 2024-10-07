@@ -10,14 +10,17 @@ export class PrismaSalesMapper {
         deliverymanId: sale.transaction.userId,
         paymentMethod: sale.paymentMethod,
         products: sale.products.map((product) => {
-          return new Product(product.id, {
-            productId: product.productId,
-            salePrice: product.salePrice,
-            price: product.product.price,
-            quantity: product.quantity,
-            status: product.product.status,
-            type: product.product.type,
-          });
+          return new Product(
+            {
+              productId: product.productId,
+              salePrice: product.salePrice,
+              price: product.product.price,
+              quantity: product.quantity,
+              status: product.product.status,
+              type: product.product.type,
+            },
+            product.id,
+          );
         }),
         totalAmount: sale.total,
         type: sale.type,

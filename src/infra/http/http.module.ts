@@ -56,7 +56,8 @@ import { DeleteTransaction } from '@/application/use-cases/transaction/delete-tr
 import { FindAllTransactionUseCase } from '@/application/use-cases/transaction/findall-transaction';
 import { UpdateTransactionUseCase } from '@/application/use-cases/transaction/update-transaction';
 import { FetchAllUsers } from '@/application/use-cases/user/fetch-all-user';
-
+import { IncreaseProductQuantityUseCase } from '@/application/use-cases/product/increase-quantity';
+import { DecreaseProductQuantityUseCase } from '@/application/use-cases/product/decrease-quantity';
 @Module({
   controllers: [
     UsersController,
@@ -114,6 +115,8 @@ import { FetchAllUsers } from '@/application/use-cases/user/fetch-all-user';
     FindAllTransactionUseCase,
     UpdateTransactionUseCase,
     FetchAllUsers,
+    IncreaseProductQuantityUseCase,
+    DecreaseProductQuantityUseCase,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

@@ -20,8 +20,9 @@ export class PrismaTransactionRepository extends TransactionRepository {
       category: transaction.category,
       userId: transaction.userId,
       referenceId: transaction.referenceId ?? null,
-      createdAt: new Date(),
+      createdAt: transaction.createdAt,
       customCategory: transaction.customCategory ?? null,
+      description: transaction.description,
     };
 
     await this.prismaService.transaction.create({

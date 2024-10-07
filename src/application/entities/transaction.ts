@@ -10,6 +10,8 @@ export interface TransactionProps {
   referenceId?: string;
   customCategory?: string;
   amount: number;
+  description?: string;
+  createdAt?: Date;
 }
 
 export class Transaction {
@@ -18,7 +20,10 @@ export class Transaction {
 
   constructor(props: TransactionProps, id?: string) {
     this._id = id ?? randomUUID();
-    this._props = props;
+    this._props = {
+      ...props,
+      createdAt: props.createdAt ?? new Date(),
+    };
   }
 
   get id(): string {
@@ -31,6 +36,22 @@ export class Transaction {
 
   set amount(value: number) {
     this._props.amount = value;
+  }
+
+  get description(): string {
+    return this._props.description;
+  }
+
+  set description(value: string) {
+    this._props.description = value;
+  }
+
+  get createdAt(): Date {
+    return this._props.createdAt;
+  }
+
+  set createdAt(value: Date) {
+    this._props.createdAt = value;
   }
 
   get transactionType(): TransactionType {

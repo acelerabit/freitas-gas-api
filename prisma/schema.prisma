@@ -157,6 +157,7 @@ model Transaction {
   mainAccount     Boolean?
   category        TransactionCategory
   createdAt       DateTime            @default(now()) @map("created_at")
+  description     String?
 
   user   User   @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   userId String @map("user_id")

@@ -9,6 +9,7 @@ interface CreateTransactionRequest {
   userId: string;
   customCategory?: string;
   amount: number;
+  description?: string;
 }
 
 @Injectable()
@@ -21,6 +22,7 @@ export class CreateTransactionUseCase {
     transactionType,
     userId,
     customCategory,
+    description,
   }: CreateTransactionRequest): Promise<void> {
     const amountFormatted = amount * 100;
 
@@ -30,6 +32,7 @@ export class CreateTransactionUseCase {
       transactionType,
       userId,
       customCategory,
+      description,
     });
 
     await this.transactionRepository.createTransaction(transaction);

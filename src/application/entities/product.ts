@@ -1,4 +1,5 @@
 import { ProductType, BottleStatus } from '@prisma/client';
+import { randomUUID } from 'crypto';
 
 export interface ProductProps {
   type: ProductType;
@@ -13,8 +14,8 @@ export class Product {
   private _id: string;
   private _props: ProductProps;
 
-  constructor(id: string, props: ProductProps) {
-    this._id = id;
+  constructor(props: ProductProps, id?: string) {
+    this._id = id ?? randomUUID();
     this._props = props;
   }
 
@@ -26,8 +27,16 @@ export class Product {
     return this._props.type;
   }
 
+  set type(type: ProductType) {
+    this._props.type = type;
+  }
+
   get status(): BottleStatus {
     return this._props.status;
+  }
+
+  set status(status: BottleStatus) {
+    this._props.status = status;
   }
 
   get price(): number {
