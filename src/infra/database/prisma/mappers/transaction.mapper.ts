@@ -12,6 +12,7 @@ export class PrismaTransactionsMapper {
         userId: transaction.userId,
         customCategory: transaction.customCategory,
         referenceId: transaction.referenceId,
+        description: transaction.description,
       },
       transaction.id,
     );
@@ -29,6 +30,7 @@ export class PrismaTransactionsMapper {
       userId: transaction.userId,
       customCategory: transaction.customCategory,
       referenceId: transaction.referenceId,
+      description: transaction.description,
     };
   }
 }

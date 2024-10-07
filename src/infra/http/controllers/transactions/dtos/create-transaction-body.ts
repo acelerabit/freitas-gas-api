@@ -20,5 +20,9 @@ export class CreateTransactionBody {
   customCategory?: string;
 
   @IsNotEmpty()
+  @IsOptional()
+  description?: string;
+
+  @IsNotEmpty()
   amount: number;
 }
