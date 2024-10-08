@@ -55,10 +55,19 @@ export class TransactionsController {
     @Param('id') id: string,
     @Body() transactionData: Partial<Transaction>,
   ): Promise<void> {
-    const transaction = Transaction.create({
-      ...transactionData,
-      id: transactionData.id || id,
-    } as any);
+    const transaction = Transaction.create(
+      {
+        ...transactionData,
+        transactionType: transactionData.transactionType,
+        amount: transactionData.amount,
+        category: transactionData.category,
+        userId: transactionData.userId,
+        customCategory: transactionData.customCategory,
+        description: transactionData.description,
+        createdAt: transactionData.createdAt,
+      } as Transaction,
+      id,
+    );
     await this.updateTransaction.execute(transaction);
   }
 }

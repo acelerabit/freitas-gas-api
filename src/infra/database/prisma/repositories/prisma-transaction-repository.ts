@@ -58,6 +58,20 @@ export class PrismaTransactionRepository extends TransactionRepository {
   async update(transaction: Transaction): Promise<void> {
     const toPrisma = PrismaTransactionsMapper.toPrisma(transaction);
 
+    if (!transaction.id) {
+      throw new Error('ID da transação não pode ser indefinido.');
+    }
+
+    const existingTransaction = await this.prismaService.transaction.findUnique(
+      {
+        where: { id: transaction.id },
+      },
+    );
+
+    if (!existingTransaction) {
+      throw new Error(`Transação com ID ${transaction.id} não encontrada.`);
+    }
+
     await this.prismaService.transaction.update({
       where: {
         id: transaction.id,
