@@ -252,6 +252,36 @@ export class PrismaSalesRepository extends SalesRepository {
     return raw.map(PrismaSalesMapper.toDomain);
   }
 
+  async findAllComodato(pagination?: PaginationParams): Promise<Sale[]> {
+    const raw = await this.prismaService.sales.findMany({
+      where: {
+        products: {
+          every: {
+            product: {
+              status: 'COMODATO',
+            },
+          },
+        },
+      },
+      include: {
+        products: {
+          include: {
+            product: true,
+          },
+        },
+        transaction: true,
+        customer: true,
+      },
+      take: pagination.itemsPerPage,
+      skip: (pagination.page - 1) * pagination.itemsPerPage,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return raw.map(PrismaSalesMapper.toDomain);
+  }
+
   async deleteSale(saleId: string): Promise<void> {
     await this.prismaService.sales.delete({
       where: { id: saleId },

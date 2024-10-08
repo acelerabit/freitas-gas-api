@@ -23,6 +23,7 @@ export abstract class SalesRepository {
     saleId: string,
     products: { id: string; quantity: number }[],
   ): Promise<void>;
+  abstract findAllComodato(pagination?: PaginationParams): Promise<Sale[]>;
   abstract findAll(
     deliveryman?: string,
     customer?: string,
