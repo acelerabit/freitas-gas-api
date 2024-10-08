@@ -27,7 +27,6 @@ export class TransactionsController {
     private updateTransaction: UpdateTransactionUseCase,
   ) {}
 
-  @Auth(Role.ADMIN)
   @Post()
   async create(@Body() body: CreateTransactionBody) {
     await this.createTransaction.execute({
@@ -37,7 +36,6 @@ export class TransactionsController {
     return;
   }
 
-  @Auth(Role.ADMIN)
   @Get()
   async findAll(@Query() pagination: PaginationParams): Promise<Transaction[]> {
     return this.findAllTransaction.execute(pagination);
@@ -50,6 +48,7 @@ export class TransactionsController {
     return;
   }
 
+  @Auth(Role.ADMIN)
   @Patch('/:id')
   async update(
     @Param('id') id: string,
