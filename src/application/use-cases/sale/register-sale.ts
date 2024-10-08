@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { SalesRepository } from '../../repositories/sales-repository';
 import { TransactionRepository } from '../../repositories/transaction-repository';
 import { Sale } from '../../entities/sale';
@@ -24,7 +24,7 @@ export class RegisterSaleUseCase {
     );
 
     if (isComodato && customer.name === 'Cliente Genérico') {
-      throw new Error(
+      throw new BadRequestException(
         'Não é permitido utilizar o cliente "Cliente Genérico" para vendas em comodato.',
       );
     }

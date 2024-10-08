@@ -19,6 +19,7 @@ import { GetSaleUseCase } from '@/application/use-cases/sale/get-sale';
 import { DeleteSaleUseCase } from '@/application/use-cases/sale/delete-sale';
 import { UpdateSaleBody } from './dtos/update-sale-body';
 import { UpdateSaleUseCase } from '@/application/use-cases/sale/update-sale';
+import { FetchComodatoSalesUseCase } from '@/application/use-cases/sale/fetch-comodato-sales';
 
 @Controller('sales')
 export class SalesController {
@@ -28,6 +29,7 @@ export class SalesController {
     private getSaleUseCase: GetSaleUseCase,
     private deleteSaleUseCase: DeleteSaleUseCase,
     private updateSaleUseCase: UpdateSaleUseCase,
+    private fetchComodatoSalesUseCase: FetchComodatoSalesUseCase,
   ) {}
 
   @Post()
@@ -121,6 +123,25 @@ export class SalesController {
         startDate,
         endDate,
       },
+      pagination: {
+        page: Number(page),
+        itemsPerPage: Number(itemsPerPage),
+      },
+    });
+
+    return sales.map(SalesPresenters.toHTTP);
+  }
+
+  @Get('/list/comodato')
+  async fetchComodatoSales(
+    @Query()
+    query: {
+      page?: string;
+      itemsPerPage?: string;
+    },
+  ) {
+    const { page, itemsPerPage } = query;
+    const { sales } = await this.fetchComodatoSalesUseCase.execute({
       pagination: {
         page: Number(page),
         itemsPerPage: Number(itemsPerPage),

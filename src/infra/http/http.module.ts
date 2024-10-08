@@ -55,6 +55,7 @@ import { TransactionsController } from './controllers/transactions/transaction.c
 import { DeleteTransaction } from '@/application/use-cases/transaction/delete-transaction';
 import { IncreaseProductQuantityUseCase } from '@/application/use-cases/product/increase-quantity';
 import { DecreaseProductQuantityUseCase } from '@/application/use-cases/product/decrease-quantity';
+import { FetchComodatoSalesUseCase } from '@/application/use-cases/sale/fetch-comodato-sales';
 
 @Module({
   controllers: [
@@ -112,6 +113,7 @@ import { DecreaseProductQuantityUseCase } from '@/application/use-cases/product/
     DeleteTransaction,
     IncreaseProductQuantityUseCase,
     DecreaseProductQuantityUseCase,
+    FetchComodatoSalesUseCase,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })
