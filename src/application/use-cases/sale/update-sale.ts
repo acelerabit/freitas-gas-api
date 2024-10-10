@@ -101,6 +101,7 @@ export class UpdateSaleUseCase {
     if (type) {
       updates.type = type;
     }
+
     Object.assign(sale, updates);
 
     sale.calculateTotalUpdate();
@@ -115,6 +116,7 @@ export class UpdateSaleUseCase {
 
     const saleProducts = sale.products.map((product) => ({
       id: product.id,
+      typeSale: product.status,
       quantity: product.quantity,
       salePrice: product.salePrice,
     }));

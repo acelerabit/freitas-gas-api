@@ -3,6 +3,7 @@ import { ProductRepository } from '../../../../application/repositories/product-
 import { Product } from '../../../../application/entities/product';
 import { PrismaService } from '../prisma.service';
 import { PrismaProductsMapper } from '../mappers/product.mapper';
+import { ProductType, BottleStatus } from '@prisma/client';
 
 @Injectable()
 export class PrismaProductRepository extends ProductRepository {
@@ -19,6 +20,24 @@ export class PrismaProductRepository extends ProductRepository {
   async findById(productId: string): Promise<Product | null> {
     const product = await this.prismaService.product.findUnique({
       where: { id: productId },
+    });
+
+    if (!product) {
+      return null;
+    }
+
+    return PrismaProductsMapper.toDomain(product);
+  }
+
+  async findByTypeAndStatus(
+    type: ProductType,
+    status: BottleStatus,
+  ): Promise<Product | null> {
+    const product = await this.prismaService.product.findFirst({
+      where: {
+        status,
+        type,
+      },
     });
 
     if (!product) {

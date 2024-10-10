@@ -17,6 +17,7 @@ import { FindAllTransactionUseCase } from '@/application/use-cases/transaction/f
 import { Transaction } from '@/application/entities/transaction';
 import { PaginationParams } from '@/@shared/pagination-interface';
 import { UpdateTransactionUseCase } from '@/application/use-cases/transaction/update-transaction';
+import { FetchExpenseTypesUseCase } from '@/application/use-cases/transaction/fetch-expense-types';
 
 @Controller('transactions')
 export class TransactionsController {
@@ -25,6 +26,7 @@ export class TransactionsController {
     private findAllTransaction: FindAllTransactionUseCase,
     private deleteTransaction: DeleteTransaction,
     private updateTransaction: UpdateTransactionUseCase,
+    private fetchExpenseTypesUseCase: FetchExpenseTypesUseCase,
   ) {}
 
   @Auth(Role.ADMIN)
@@ -60,5 +62,17 @@ export class TransactionsController {
       id: transactionData.id || id,
     } as any);
     await this.updateTransaction.execute(transaction);
+  }
+
+  @Get('/expense/types')
+  async fetchTypes() {
+    const { expenseTypes } = await this.fetchExpenseTypesUseCase.execute();
+
+    return expenseTypes.map((expenseType) => {
+      return {
+        id: expenseType.id,
+        name: expenseType.name,
+      };
+    });
   }
 }

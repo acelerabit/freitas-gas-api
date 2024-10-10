@@ -1,3 +1,4 @@
+import { TransferProductQuantityUseCase } from './../../../../application/use-cases/product/transfer-quantity-product';
 import {
   Controller,
   Get,
@@ -29,6 +30,7 @@ export class ProductController {
     private readonly deleteProductUseCase: DeleteProductUseCase,
     private readonly decreaseProductQuantityUseCase: DecreaseProductQuantityUseCase,
     private readonly increaseProductQuantityUseCase: IncreaseProductQuantityUseCase,
+    private readonly transferProductQuantityUseCase: TransferProductQuantityUseCase,
   ) {}
 
   @Get()
@@ -116,6 +118,24 @@ export class ProductController {
     const { quantity } = body;
     await this.decreaseProductQuantityUseCase.execute({
       id,
+      quantity,
+    });
+  }
+
+  @Patch('/productFrom/:productFrom/productTo/:productTo')
+  async transfer(
+    @Param('productFrom') productFrom: string,
+    @Param('productTo') productTo: string,
+
+    @Body()
+    body: {
+      quantity: number;
+    },
+  ) {
+    const { quantity } = body;
+    await this.transferProductQuantityUseCase.execute({
+      productFrom,
+      productTo,
       quantity,
     });
   }
