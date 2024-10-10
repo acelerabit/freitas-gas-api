@@ -18,6 +18,7 @@ export class PrismaSalesMapper {
               quantity: product.quantity,
               status: product.product.status,
               type: product.product.type,
+              typeSale: product.typeSale,
             },
             product.id,
           );

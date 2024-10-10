@@ -38,15 +38,12 @@ export class SalesController {
   async registerSale(@Body() body) {
     const products = body.products.map(
       (product) =>
-        new Product(
-          {
-            type: product.type as ProductType,
-            status: product.status as BottleStatus,
-            price: product.price,
-            quantity: product.quantity,
-          },
-          product.productId,
-        ),
+        new Product({
+          type: product.type as ProductType,
+          status: product.status as BottleStatus,
+          price: product.price,
+          quantity: product.quantity,
+        }),
     );
 
     const sale = new Sale(body.customerId, {

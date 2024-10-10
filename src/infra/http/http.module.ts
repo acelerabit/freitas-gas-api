@@ -59,6 +59,8 @@ import { FetchAllUsers } from '@/application/use-cases/user/fetch-all-user';
 import { IncreaseProductQuantityUseCase } from '@/application/use-cases/product/increase-quantity';
 import { DecreaseProductQuantityUseCase } from '@/application/use-cases/product/decrease-quantity';
 import { FetchComodatoSalesUseCase } from '@/application/use-cases/sale/fetch-comodato-sales';
+import { FetchExpenseTypesUseCase } from '@/application/use-cases/transaction/fetch-expense-types';
+import { TransferProductQuantityUseCase } from '@/application/use-cases/product/transfer-quantity-product';
 
 @Module({
   controllers: [
@@ -120,6 +122,8 @@ import { FetchComodatoSalesUseCase } from '@/application/use-cases/sale/fetch-co
     IncreaseProductQuantityUseCase,
     DecreaseProductQuantityUseCase,
     FetchComodatoSalesUseCase,
+    FetchExpenseTypesUseCase,
+    TransferProductQuantityUseCase,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

@@ -30,6 +30,7 @@ enum TransactionCategory {
 
 enum PaymentMethod {
   CARTAO
+  CARTAO_CREDITO
   DINHEIRO
   FIADO
   PIX
@@ -71,6 +72,12 @@ model User {
   @@map("users")
 }
 
+model ExpenseTypes {
+  id String @id @default(uuid())
+
+  name String
+}
+
 model Notification {
   id String @id @default(uuid())
 
@@ -86,13 +93,14 @@ model Notification {
 }
 
 model Product {
-  id        String       @id @default(uuid())
-  type      ProductType
-  status    BottleStatus
+  id     String       @id @default(uuid())
+  type   ProductType
+  status BottleStatus
+
   price     Int
   quantity  Int
-  createdAt DateTime     @default(now()) @map("created_at")
-  updatedAt DateTime     @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   sales SalesProduct[]
 
@@ -138,11 +146,12 @@ model Sales {
 }
 
 model SalesProduct {
-  id        String @id @default(uuid())
-  saleId    String @map("sale_id")
-  productId String @map("product_id")
+  id        String        @id @default(uuid())
+  saleId    String        @map("sale_id")
+  productId String        @map("product_id")
   quantity  Int
   salePrice Int?
+  typeSale  BottleStatus?
 
   sale    Sales   @relation(fields: [saleId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onUpdate: Cascade, onDelete: Cascade)

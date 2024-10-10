@@ -8,6 +8,7 @@ export interface ProductProps {
   quantity: number;
   productId?: string;
   salePrice?: number;
+  typeSale?: BottleStatus;
 }
 
 export class Product {
@@ -29,6 +30,14 @@ export class Product {
 
   set type(type: ProductType) {
     this._props.type = type;
+  }
+
+  get typeSale(): BottleStatus {
+    return this._props.typeSale;
+  }
+
+  set typeSale(value: BottleStatus) {
+    this._props.typeSale = value;
   }
 
   get status(): BottleStatus {
