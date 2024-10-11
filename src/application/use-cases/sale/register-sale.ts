@@ -84,6 +84,7 @@ export class RegisterSaleUseCase {
     const saleProducts = saleWithCustomerId.products.map((product) => ({
       id: product.id,
       salePrice: product.price,
+      typeSale: product.status,
       quantity: product.quantity,
     }));
 

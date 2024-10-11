@@ -7,7 +7,7 @@ export class PrismaSalesMapper {
     const newSale = new Sale(
       sale.customerId,
       {
-        deliverymanId: sale.transaction.userId,
+        deliverymanId: sale.transaction.userId ?? null,
         paymentMethod: sale.paymentMethod,
         products: sale.products.map((product) => {
           return new Product(

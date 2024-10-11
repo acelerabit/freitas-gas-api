@@ -31,11 +31,17 @@ export class PrismaSalesRepository extends SalesRepository {
 
   async createSalesProducts(
     saleId: string,
-    products: { id: string; quantity: number; salePrice: number }[],
+    products: {
+      id: string;
+      quantity: number;
+      typeSale: BottleStatus;
+      salePrice: number;
+    }[],
   ): Promise<void> {
     const salesProducts = products.map((product) => ({
       saleId,
       salePrice: product.salePrice,
+      typeSale: product.typeSale,
       productId: product.id,
       quantity: product.quantity,
     }));
@@ -275,7 +281,11 @@ export class PrismaSalesRepository extends SalesRepository {
             product: true,
           },
         },
-        transaction: true,
+        transaction: {
+          include: {
+            user: true,
+          },
+        },
         customer: true,
       },
       take: pagination.itemsPerPage,
