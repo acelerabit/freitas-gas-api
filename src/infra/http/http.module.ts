@@ -59,6 +59,17 @@ import { FetchAllUsers } from '@/application/use-cases/user/fetch-all-user';
 import { IncreaseProductQuantityUseCase } from '@/application/use-cases/product/increase-quantity';
 import { DecreaseProductQuantityUseCase } from '@/application/use-cases/product/decrease-quantity';
 import { FetchComodatoSalesUseCase } from '@/application/use-cases/sale/fetch-comodato-sales';
+import { CreateDebt } from '@/application/use-cases/debt/create-debt';
+import { UpdateDebt } from '@/application/use-cases/debt/update-debt';
+import { CreateSupplier } from '@/application/use-cases/supplier/create-supplier';
+import { DeleteSupplier } from '@/application/use-cases/supplier/delete-supplier';
+import { GetSupplier } from '@/application/use-cases/supplier/get-supplier';
+import { GetSupplierWithDebts } from '@/application/use-cases/supplier/get-supplier-with-debts';
+import { UpdateSupplier } from '@/application/use-cases/supplier/update-supplier';
+import { SupplierController } from './controllers/supplier/supplier.controller';
+import { DebtController } from './controllers/debt/debt.controller';
+import { GetAllSuppliers } from '@/application/use-cases/supplier/find-all-supplier';
+import { DeleteDebt } from '@/application/use-cases/debt/delete-debt';
 
 @Module({
   controllers: [
@@ -73,6 +84,8 @@ import { FetchComodatoSalesUseCase } from '@/application/use-cases/sale/fetch-co
     SalesController,
     ProductController,
     TransactionsController,
+    SupplierController,
+    DebtController,
   ],
   providers: [
     CreateUser,
@@ -120,6 +133,15 @@ import { FetchComodatoSalesUseCase } from '@/application/use-cases/sale/fetch-co
     IncreaseProductQuantityUseCase,
     DecreaseProductQuantityUseCase,
     FetchComodatoSalesUseCase,
+    CreateDebt,
+    UpdateDebt,
+    CreateSupplier,
+    DeleteSupplier,
+    GetSupplier,
+    GetSupplierWithDebts,
+    UpdateSupplier,
+    GetAllSuppliers,
+    DeleteDebt,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

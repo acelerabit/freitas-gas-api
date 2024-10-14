@@ -16,6 +16,10 @@ import { TransactionRepository } from '@/application/repositories/transaction-re
 import { PrismaTransactionRepository } from './prisma/repositories/prisma-transaction-repository';
 import { ProductRepository } from '@/application/repositories/product-repository';
 import { PrismaProductRepository } from './prisma/repositories/prisma-products-repository';
+import { DebtsRepository } from '@/application/repositories/debt-repository';
+import { PrismaDebtsRepository } from './prisma/repositories/prisma-debts.repository';
+import { SuppliersRepository } from '@/application/repositories/supplier-repository';
+import { PrismaSuppliersRepository } from './prisma/repositories/prisma-suppliers.repository';
 
 @Module({
   providers: [
@@ -46,6 +50,14 @@ import { PrismaProductRepository } from './prisma/repositories/prisma-products-r
     {
       provide: ProductRepository,
       useClass: PrismaProductRepository,
+    },
+    {
+      provide: DebtsRepository,
+      useClass: PrismaDebtsRepository,
+    },
+    {
+      provide: SuppliersRepository,
+      useClass: PrismaSuppliersRepository,
     },
     {
       provide: PrismaService,
@@ -83,6 +95,14 @@ import { PrismaProductRepository } from './prisma/repositories/prisma-products-r
     {
       provide: ProductRepository,
       useClass: PrismaProductRepository,
+    },
+    {
+      provide: DebtsRepository,
+      useClass: PrismaDebtsRepository,
+    },
+    {
+      provide: SuppliersRepository,
+      useClass: PrismaSuppliersRepository,
     },
     {
       provide: PrismaService,
