@@ -7,6 +7,8 @@ import { TransactionType, TransactionCategory } from '@prisma/client';
 import { CustomersRepository } from '@/application/repositories/customer-repository';
 import { BottleStatus } from '@prisma/client';
 import { UsersRepository } from '@/application/repositories/user-repository';
+import { ProductRepository } from '@/application/repositories/product-repository';
+import { Product } from '@/application/entities/product';
 
 @Injectable()
 export class RegisterSaleUseCase {
@@ -15,6 +17,7 @@ export class RegisterSaleUseCase {
     private readonly transactionRepository: TransactionRepository,
     private readonly customerRepository: CustomersRepository,
     private readonly usersRepository: UsersRepository,
+    private productRepository: ProductRepository,
   ) {}
 
   async execute(sale: Sale): Promise<void> {
@@ -35,10 +38,33 @@ export class RegisterSaleUseCase {
       throw new Error('Entregador não encontrado');
     }
 
+    const formatProducts = await Promise.all(
+      sale.products.map(async (product) => {
+        const getProduct = await this.productRepository.findByTypeAndStatus(
+          product.type,
+          product.status,
+        );
+
+        if (getProduct) {
+          return new Product(
+            {
+              price: product.price,
+              quantity: product.quantity,
+              status: product.status,
+              type: product.type,
+            },
+            getProduct.id,
+          );
+        }
+
+        return null; // Retorne null para valores não encontrados
+      }),
+    );
+
     const saleWithCustomerId = new Sale(sale.customerId, {
       deliverymanId: sale.deliverymanId,
       paymentMethod: sale.paymentMethod,
-      products: sale.products,
+      products: formatProducts.filter((product) => product !== null),
       totalAmount: sale.totalAmount,
       type: sale.type,
       customer: customer,
@@ -58,6 +84,7 @@ export class RegisterSaleUseCase {
     const saleProducts = saleWithCustomerId.products.map((product) => ({
       id: product.id,
       salePrice: product.price,
+      typeSale: product.status,
       quantity: product.quantity,
     }));
 

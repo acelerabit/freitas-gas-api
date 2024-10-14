@@ -20,6 +20,8 @@ import { DebtsRepository } from '@/application/repositories/debt-repository';
 import { PrismaDebtsRepository } from './prisma/repositories/prisma-debts.repository';
 import { SuppliersRepository } from '@/application/repositories/supplier-repository';
 import { PrismaSuppliersRepository } from './prisma/repositories/prisma-suppliers.repository';
+import { ExpenseTypesRepository } from '@/application/repositories/expense-type-repository';
+import { PrismaExpenseTypesRepository } from './prisma/repositories/prisma-expense-type-repository';
 
 @Module({
   providers: [
@@ -58,6 +60,10 @@ import { PrismaSuppliersRepository } from './prisma/repositories/prisma-supplier
     {
       provide: SuppliersRepository,
       useClass: PrismaSuppliersRepository,
+    },
+    {
+      provide: ExpenseTypesRepository,
+      useClass: PrismaExpenseTypesRepository,
     },
     {
       provide: PrismaService,
@@ -103,6 +109,10 @@ import { PrismaSuppliersRepository } from './prisma/repositories/prisma-supplier
     {
       provide: SuppliersRepository,
       useClass: PrismaSuppliersRepository,
+    },
+    {
+      provide: ExpenseTypesRepository,
+      useClass: PrismaExpenseTypesRepository,
     },
     {
       provide: PrismaService,

@@ -19,7 +19,7 @@ export class Transaction {
   private _props: TransactionProps;
 
   constructor(props: TransactionProps, id?: string) {
-    this._id = id;
+    this._id = id ?? randomUUID();
     this._props = {
       ...props,
       createdAt: props.createdAt ?? new Date(),

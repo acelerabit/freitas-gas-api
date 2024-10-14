@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Product } from '../entities/product';
 import { Customer } from './customer';
 import { User } from './user';
+import { BottleStatus } from '@prisma/client';
 
 export interface SaleProps {
   deliverymanId: string;

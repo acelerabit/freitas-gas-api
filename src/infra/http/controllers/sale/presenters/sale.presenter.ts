@@ -16,6 +16,7 @@ export class SalesPresenters {
           status: product.status,
           productId: product.productId,
           salePrice: product.salePrice,
+          typeSale: product.typeSale,
         };
       }),
       paymentMethod: sale.paymentMethod,
