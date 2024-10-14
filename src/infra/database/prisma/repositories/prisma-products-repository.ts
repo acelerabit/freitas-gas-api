@@ -12,7 +12,16 @@ export class PrismaProductRepository extends ProductRepository {
   }
 
   async findAll(): Promise<Product[]> {
-    const products = await this.prismaService.product.findMany();
+    const products = await this.prismaService.product.findMany({
+      orderBy: [
+        {
+          type: 'desc',
+        },
+        {
+          status: 'desc',
+        },
+      ],
+    });
 
     return products.map(PrismaProductsMapper.toDomain);
   }
