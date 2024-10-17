@@ -1,3 +1,5 @@
+-- prisma migrate up --skip-transaction
+
 -- AlterEnum
 -- This migration adds more than one value to an enum.
 -- With PostgreSQL versions 11 and earlier, this is not possible

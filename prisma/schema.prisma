@@ -41,7 +41,6 @@ enum PaymentMethod {
 }
 
 enum ProductType {
-  P3
   P13
   P20
   P45
@@ -203,12 +202,12 @@ model Supplier {
 }
 
 model Debt {
-  id        String   @id @default(uuid())
-  amount    Float
-  dueDate   DateTime
-  paid      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  supplier  Supplier @relation("SupplierDebts", fields: [supplierId], references: [id])
+  id         String   @id @default(uuid())
+  amount     Float
+  dueDate    DateTime
+  paid       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  supplier   Supplier @relation("SupplierDebts", fields: [supplierId], references: [id])
   supplierId String
 }
