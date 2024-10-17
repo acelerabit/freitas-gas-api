@@ -13,6 +13,7 @@ export class PrismaUsersMapper {
         acceptNotifications: user.acceptNotifications,
         status: user.status,
         createdAt: user.createdAt,
+        accountAmount: user.accountAmount,
       },
       user.id,
     );
@@ -29,6 +30,7 @@ export class PrismaUsersMapper {
       acceptNotifications: user.acceptNotifications,
       status: user.status,
       createdAt: user.createdAt,
+      accountAmount: user.accountAmount,
     };
   }
 }

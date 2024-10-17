@@ -61,6 +61,10 @@ import { DecreaseProductQuantityUseCase } from '@/application/use-cases/product/
 import { FetchComodatoSalesUseCase } from '@/application/use-cases/sale/fetch-comodato-sales';
 import { FetchExpenseTypesUseCase } from '@/application/use-cases/transaction/fetch-expense-types';
 import { TransferProductQuantityUseCase } from '@/application/use-cases/product/transfer-quantity-product';
+import { FetchExpenses } from '@/application/use-cases/transaction/fetch-expenses';
+import { CalculateCompanyBalance } from '@/application/use-cases/transaction/calculate-company-balance';
+import { TransferToDeliveryman } from '@/application/use-cases/transaction/transfer-to-deliveryman';
+import { FetchDeliverymans } from '@/application/use-cases/user/fetch-deliverymans';
 
 @Module({
   controllers: [
@@ -124,6 +128,10 @@ import { TransferProductQuantityUseCase } from '@/application/use-cases/product/
     FetchComodatoSalesUseCase,
     FetchExpenseTypesUseCase,
     TransferProductQuantityUseCase,
+    FetchExpenses,
+    CalculateCompanyBalance,
+    TransferToDeliveryman,
+    FetchDeliverymans,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

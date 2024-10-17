@@ -10,7 +10,7 @@ import {
   Query,
   Patch,
 } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { Role, TransactionCategory } from '@prisma/client';
 import { Auth } from 'src/infra/decorators/auth.decorator';
 import { CreateTransactionBody } from './dtos/create-transaction-body';
 import { FindAllTransactionUseCase } from '@/application/use-cases/transaction/findall-transaction';
@@ -18,6 +18,11 @@ import { Transaction } from '@/application/entities/transaction';
 import { PaginationParams } from '@/@shared/pagination-interface';
 import { UpdateTransactionUseCase } from '@/application/use-cases/transaction/update-transaction';
 import { FetchExpenseTypesUseCase } from '@/application/use-cases/transaction/fetch-expense-types';
+import { FetchExpenses } from '@/application/use-cases/transaction/fetch-expenses';
+import { SortType } from '@/application/repositories/transaction-repository';
+import { CalculateCompanyBalance } from '@/application/use-cases/transaction/calculate-company-balance';
+import { TransferToDeliveryman } from '@/application/use-cases/transaction/transfer-to-deliveryman';
+import { TransferToDeliverymanBody } from './dtos/transfer-to-deliveryman-body';
 
 @Controller('transactions')
 export class TransactionsController {
@@ -27,6 +32,9 @@ export class TransactionsController {
     private deleteTransaction: DeleteTransaction,
     private updateTransaction: UpdateTransactionUseCase,
     private fetchExpenseTypesUseCase: FetchExpenseTypesUseCase,
+    private fetchAllExpenses: FetchExpenses,
+    private calculateCompanyBalance: CalculateCompanyBalance,
+    private transferToDeliveryman: TransferToDeliveryman,
   ) {}
 
   @Post()
@@ -39,8 +47,70 @@ export class TransactionsController {
   }
 
   @Get()
-  async findAll(@Query() pagination: PaginationParams): Promise<Transaction[]> {
-    return this.findAllTransaction.execute(pagination);
+  async findAll(
+    @Query()
+    query: {
+      type?: string;
+      category?: TransactionCategory;
+      orderByField?: SortType;
+      orderDirection?: 'desc' | 'asc';
+      page?: string;
+      itemsPerPage?: string;
+      startDate?: Date;
+      endDate?: Date;
+    },
+  ): Promise<Transaction[]> {
+    const {
+      category,
+      type,
+      orderByField,
+      orderDirection,
+      page,
+      itemsPerPage,
+      startDate,
+      endDate,
+    } = query;
+    return this.findAllTransaction.execute({
+      type,
+      filterParams: {
+        category,
+        startDate,
+        endDate,
+      },
+      orderByField,
+      orderDirection,
+      pagination: {
+        itemsPerPage: Number(itemsPerPage),
+        page: Number(page),
+      },
+    });
+  }
+
+  @Get('/expenses')
+  async findAllExpenses(
+    @Query() pagination: PaginationParams,
+  ): Promise<Transaction[]> {
+    return this.fetchAllExpenses.execute(pagination);
+  }
+
+  @Get('/balance')
+  async balance(): Promise<number> {
+    const { finalBalance } = await this.calculateCompanyBalance.execute();
+
+    return finalBalance;
+  }
+
+  @Post('/transfer/:deliverymanId')
+  async transfer(
+    @Param('deliverymanId') deliverymanId: string,
+    @Body() body: TransferToDeliverymanBody,
+  ) {
+    await this.transferToDeliveryman.execute({
+      ...body,
+      deliverymanId,
+    });
+
+    return;
   }
 
   @Auth(Role.ADMIN)

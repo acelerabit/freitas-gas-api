@@ -29,13 +29,23 @@ export class RegisterSaleUseCase {
     if (isComodato && customer.name === 'Cliente Genérico') {
       throw new BadRequestException(
         'Não é permitido utilizar o cliente "Cliente Genérico" para vendas em comodato.',
+        {
+          cause: new Error(
+            'Não é permitido utilizar o cliente "Cliente Genérico" para vendas em comodato.',
+          ),
+          description:
+            'Não é permitido utilizar o cliente "Cliente Genérico" para vendas em comodato.',
+        },
       );
     }
 
     const deliveryman = await this.usersRepository.findById(sale.deliverymanId);
 
     if (!deliveryman) {
-      throw new Error('Entregador não encontrado');
+      throw new BadRequestException('Entregador não encontrado', {
+        cause: new Error('Entregador não encontrado'),
+        description: 'Entregador não encontrado',
+      });
     }
 
     const formatProducts = await Promise.all(
@@ -48,7 +58,7 @@ export class RegisterSaleUseCase {
         if (getProduct) {
           return new Product(
             {
-              price: product.price,
+              price: product.price * 100,
               quantity: product.quantity,
               status: product.status,
               type: product.type,
@@ -71,10 +81,12 @@ export class RegisterSaleUseCase {
       deliveryman: deliveryman,
     });
 
-    if (saleWithCustomerId.isComodato() || saleWithCustomerId.isFull()) {
-      for (const product of saleWithCustomerId.products) {
-        await this.salesRepository.updateStock(product.id, -product.quantity);
-      }
+    for (const product of saleWithCustomerId.products) {
+      await this.salesRepository.updateStock(
+        product.id,
+        product.quantity,
+        product.status,
+      );
     }
 
     saleWithCustomerId.calculateTotal();

@@ -25,6 +25,9 @@ enum TransactionCategory {
   DEPOSIT
   SALE
   EXPENSE
+  INCOME
+  WITHDRAW
+  TRANSFER
   CUSTOM
 }
 
@@ -61,6 +64,8 @@ model User {
   acceptNotifications Boolean @default(true) @map("accept_notifications")
 
   role Role @default(DELIVERYMAN)
+
+  accountAmount Int? @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
