@@ -45,4 +45,13 @@ export abstract class SalesRepository {
       quantity: number;
     }[],
   ): Promise<void>;
+  abstract getSalesIndicators(
+    startDate: Date,
+    endDate: Date,
+    deliverymanId?: string,
+  ): Promise<{
+    totalSales: number;
+    totalPerDay: { createdAt: Date; total: number }[];
+    totalPerMonth: { year: number; month: number; total: number }[];
+  }>;
 }

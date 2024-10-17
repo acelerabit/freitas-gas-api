@@ -72,6 +72,7 @@ import { GetAllSuppliers } from '@/application/use-cases/supplier/find-all-suppl
 import { DeleteDebt } from '@/application/use-cases/debt/delete-debt';
 import { FetchExpenseTypesUseCase } from '@/application/use-cases/transaction/fetch-expense-types';
 import { TransferProductQuantityUseCase } from '@/application/use-cases/product/transfer-quantity-product';
+import { GetSalesIndicatorsUseCase } from '@/application/use-cases/sale/get-sales-indicators';
 @Module({
   controllers: [
     UsersController,
@@ -145,6 +146,7 @@ import { TransferProductQuantityUseCase } from '@/application/use-cases/product/
     DeleteDebt,
     FetchExpenseTypesUseCase,
     TransferProductQuantityUseCase,
+    GetSalesIndicatorsUseCase,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

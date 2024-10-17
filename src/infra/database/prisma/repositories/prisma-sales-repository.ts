@@ -316,4 +316,80 @@ export class PrismaSalesRepository extends SalesRepository {
       },
     });
   }
+
+  async getSalesIndicators(
+    startDate: Date,
+    endDate: Date,
+    deliverymanId?: string,
+  ): Promise<{
+    totalSales: number;
+    totalPerDay: { createdAt: Date; total: number }[];
+    totalPerMonth: { year: number; month: number; total: number }[];
+  }> {
+    const whereFilter = {
+      createdAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+      ...(deliverymanId
+        ? {
+            transaction: {
+              userId: deliverymanId,
+            },
+          }
+        : {}),
+    };
+
+    const totalSales = await this.prismaService.sales.aggregate({
+      _sum: {
+        total: true,
+      },
+      where: whereFilter,
+    });
+
+    const salesPerDay = await this.prismaService.sales.findMany({
+      where: whereFilter,
+      select: {
+        createdAt: true,
+        total: true,
+      },
+    });
+
+    const totalPerDay = salesPerDay.reduce((acc, sale) => {
+      const date = sale.createdAt.toISOString().split('T')[0];
+
+      if (!acc[date]) {
+        acc[date] = { createdAt: sale.createdAt, total: 0 };
+      }
+
+      acc[date].total += Number(sale.total);
+      return acc;
+    }, {} as Record<string, { createdAt: Date; total: number }>);
+
+    const formattedTotalPerDay = Object.values(totalPerDay);
+
+    const totalPerMonth = await this.prismaService.$queryRaw<
+      { year: number; month: number; total: number }[]
+    >`
+      SELECT 
+        EXTRACT(YEAR FROM "created_at") AS year,
+        EXTRACT(MONTH FROM "created_at") AS month,
+        SUM(total) AS total
+      FROM sales
+      WHERE "created_at" >= ${startDate} AND "created_at" <= ${endDate}
+      GROUP BY year, month
+    `;
+
+    const formattedTotalPerMonth = totalPerMonth.map((item) => ({
+      year: item.year,
+      month: item.month,
+      total: Number(item.total),
+    }));
+
+    return {
+      totalSales: Number(totalSales._sum.total || 0),
+      totalPerDay: formattedTotalPerDay,
+      totalPerMonth: formattedTotalPerMonth,
+    };
+  }
 }

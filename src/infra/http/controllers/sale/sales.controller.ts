@@ -22,6 +22,7 @@ import { DeleteSaleUseCase } from '@/application/use-cases/sale/delete-sale';
 import { UpdateSaleBody } from './dtos/update-sale-body';
 import { UpdateSaleUseCase } from '@/application/use-cases/sale/update-sale';
 import { FetchComodatoSalesUseCase } from '@/application/use-cases/sale/fetch-comodato-sales';
+import { GetSalesIndicatorsUseCase } from '@/application/use-cases/sale/get-sales-indicators';
 
 @Controller('sales')
 export class SalesController {
@@ -32,6 +33,7 @@ export class SalesController {
     private deleteSaleUseCase: DeleteSaleUseCase,
     private updateSaleUseCase: UpdateSaleUseCase,
     private fetchComodatoSalesUseCase: FetchComodatoSalesUseCase,
+    private getSalesIndicatorsUseCase: GetSalesIndicatorsUseCase,
   ) {}
 
   @Post()
@@ -76,15 +78,6 @@ export class SalesController {
     });
 
     return;
-  }
-
-  @Get('/:id')
-  async GetSale(@Param('id') id: string) {
-    const { sale } = await this.getSaleUseCase.execute({
-      id,
-    });
-
-    return SalesPresenters.toHTTP(sale);
   }
 
   @Get()
@@ -154,5 +147,40 @@ export class SalesController {
   @Delete(':id')
   async deleteSale(@Param('id') saleId: string): Promise<void> {
     await this.deleteSaleUseCase.execute(saleId);
+  }
+
+  @Get('/indicators')
+  async getSalesIndicators(
+    @Query()
+    query: {
+      startDate: string;
+      endDate: string;
+      deliverymanId?: string;
+    },
+  ) {
+    const { startDate, endDate, deliverymanId } = query;
+
+    const dateFiltersProvided = startDate && endDate;
+    const startDateObj = dateFiltersProvided
+      ? new Date(startDate)
+      : new Date('2000-01-01');
+    const endDateObj = dateFiltersProvided ? new Date(endDate) : new Date();
+
+    const indicators = await this.getSalesIndicatorsUseCase.execute(
+      startDateObj,
+      endDateObj,
+      deliverymanId,
+    );
+
+    return indicators;
+  }
+
+  @Get('/:id')
+  async GetSale(@Param('id') id: string) {
+    const { sale } = await this.getSaleUseCase.execute({
+      id,
+    });
+
+    return SalesPresenters.toHTTP(sale);
   }
 }
