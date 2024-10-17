@@ -10,7 +10,7 @@ import {
   Put,
   Query,
   UseGuards,
-  Delete
+  Delete,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { Queue } from 'bull';
@@ -28,6 +28,7 @@ import { UsersPresenters } from './presenters/user.presenter';
 import { DeleteUser } from '@/application/use-cases/user/delete-user';
 import { Auth } from 'src/infra/decorators/auth.decorator';
 import { FetchAllUsers } from '@/application/use-cases/user/fetch-all-user';
+import { FetchDeliverymans } from '@/application/use-cases/user/fetch-deliverymans';
 
 /** If you want catch data from requests and responses, enable it */
 
@@ -47,7 +48,7 @@ export class UsersController {
     private fetchUsers: FetchUsers,
     private deleteUser: DeleteUser,
     private fetchAllUsers: FetchAllUsers,
-    @InjectQueue(EMAIL_QUEUE) private sendMailQueue: Queue,
+    private fetchDeliverymans: FetchDeliverymans,
   ) {}
 
   // @UseInterceptors(interceptor)
@@ -86,6 +87,14 @@ export class UsersController {
     return users.map(UsersPresenters.toHTTP);
   }
 
+  @Auth(Role.ADMIN)
+  @Get('/deliverymans')
+  async fetch() {
+    const deliverymans = await this.fetchDeliverymans.execute();
+
+    return deliverymans.map(UsersPresenters.toHTTP);
+  }
+
   @Post('/by-email')
   async getByEmail(@Body() body: GetUserByEmailBody) {
     const { email } = body;
@@ -112,14 +121,6 @@ export class UsersController {
     });
 
     return UsersPresenters.toHTTP(user);
-  }
-
-  @UseGuards(JwtUserAuthGuard)
-  @Get('/send-email')
-  async sendMail() {
-    await this.sendMailQueue.add('sendMail-job', { email: 'teste@gmail.com' });
-
-    return;
   }
 
   @Auth(Role.ADMIN)

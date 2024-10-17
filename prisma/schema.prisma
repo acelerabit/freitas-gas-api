@@ -25,6 +25,9 @@ enum TransactionCategory {
   DEPOSIT
   SALE
   EXPENSE
+  INCOME
+  WITHDRAW
+  TRANSFER
   CUSTOM
 }
 
@@ -38,7 +41,6 @@ enum PaymentMethod {
 }
 
 enum ProductType {
-  P3
   P13
   P20
   P45
@@ -61,6 +63,8 @@ model User {
   acceptNotifications Boolean @default(true) @map("accept_notifications")
 
   role Role @default(DELIVERYMAN)
+
+  accountAmount Int? @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -198,12 +202,12 @@ model Supplier {
 }
 
 model Debt {
-  id        String   @id @default(uuid())
-  amount    Float
-  dueDate   DateTime
-  paid      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  supplier  Supplier @relation("SupplierDebts", fields: [supplierId], references: [id])
+  id         String   @id @default(uuid())
+  amount     Float
+  dueDate    DateTime
+  paid       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  supplier   Supplier @relation("SupplierDebts", fields: [supplierId], references: [id])
   supplierId String
 }

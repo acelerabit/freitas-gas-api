@@ -8,19 +8,6 @@ async function seedProducts() {
   await prisma.product.createMany({
     data: [
       {
-        type: 'P3',
-        status: 'EMPTY',
-        price: 0,
-        quantity: 0,
-      },
-      {
-        type: 'P3',
-        status: 'COMODATO',
-        price: 0,
-        quantity: 0,
-      },
-
-      {
         type: 'P13',
         status: 'FULL',
         price: 0,

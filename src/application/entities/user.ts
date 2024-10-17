@@ -12,6 +12,7 @@ export interface UserProps {
   acceptNotifications?: boolean;
   role: Role;
   createdAt: Date;
+  accountAmount?: number;
 }
 
 export class User {
@@ -24,6 +25,7 @@ export class User {
       ...props,
       status: props.status ?? false,
       createdAt: props.createdAt ?? new Date(),
+      accountAmount: props.accountAmount ?? 0,
     };
   }
 
@@ -45,6 +47,14 @@ export class User {
 
   public set email(email: string) {
     this.props.email = email;
+  }
+
+  public get accountAmount(): number {
+    return this.props.accountAmount;
+  }
+
+  public set accountAmount(accountAmount: number) {
+    this.props.accountAmount = accountAmount;
   }
 
   public get password(): string {

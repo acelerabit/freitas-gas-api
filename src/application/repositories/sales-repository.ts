@@ -1,6 +1,7 @@
 import { Product } from '@/application/entities/product';
 import { PaginationParams } from '@/@shared/pagination-interface';
 import { Sale } from '../entities/sale';
+import { BottleStatus } from '@prisma/client';
 
 export type SortType =
   | 'createdAt'
@@ -17,6 +18,7 @@ export abstract class SalesRepository {
   abstract updateStock(
     productId: string,
     quantityChange: number,
+    status: BottleStatus,
   ): Promise<void>;
   abstract findById(id: string): Promise<Sale | null>;
   abstract createSalesProducts(

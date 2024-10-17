@@ -108,10 +108,12 @@ export class UpdateSaleUseCase {
 
     await this.salesRepository.update(sale);
 
-    if (sale.isComodato() || sale.isFull()) {
-      for (const product of sale.products) {
-        await this.salesRepository.updateStock(product.id, -product.quantity);
-      }
+    for (const product of sale.products) {
+      await this.salesRepository.updateStock(
+        product.id,
+        product.quantity,
+        product.status,
+      );
     }
 
     const saleProducts = sale.products.map((product) => ({

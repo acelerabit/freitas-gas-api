@@ -20,6 +20,7 @@ export class PrismaUsersRepository implements UsersRepository {
         role: user.role,
         acceptNotifications: user.acceptNotifications,
         status: user.status,
+        accountAmount: user.accountAmount,
       },
     });
   }
@@ -54,6 +55,16 @@ export class PrismaUsersRepository implements UsersRepository {
     const users = await this.prismaService.user.findMany();
 
     return users.map(PrismaUsersMapper.toDomain);
+  }
+
+  async findAllDeliverymansWithoutPaginate(): Promise<User[]> {
+    const deliverymans = await this.prismaService.user.findMany({
+      where: {
+        role: 'DELIVERYMAN',
+      },
+    });
+
+    return deliverymans.map(PrismaUsersMapper.toDomain);
   }
 
   async findById(id: string): Promise<User> {
