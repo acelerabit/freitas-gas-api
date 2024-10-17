@@ -72,6 +72,11 @@ import { GetAllSuppliers } from '@/application/use-cases/supplier/find-all-suppl
 import { DeleteDebt } from '@/application/use-cases/debt/delete-debt';
 import { FetchExpenseTypesUseCase } from '@/application/use-cases/transaction/fetch-expense-types';
 import { TransferProductQuantityUseCase } from '@/application/use-cases/product/transfer-quantity-product';
+import { FetchExpenses } from '@/application/use-cases/transaction/fetch-expenses';
+import { CalculateCompanyBalance } from '@/application/use-cases/transaction/calculate-company-balance';
+import { TransferToDeliveryman } from '@/application/use-cases/transaction/transfer-to-deliveryman';
+import { FetchDeliverymans } from '@/application/use-cases/user/fetch-deliverymans';
+
 @Module({
   controllers: [
     UsersController,
@@ -145,6 +150,10 @@ import { TransferProductQuantityUseCase } from '@/application/use-cases/product/
     DeleteDebt,
     FetchExpenseTypesUseCase,
     TransferProductQuantityUseCase,
+    FetchExpenses,
+    CalculateCompanyBalance,
+    TransferToDeliveryman,
+    FetchDeliverymans,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

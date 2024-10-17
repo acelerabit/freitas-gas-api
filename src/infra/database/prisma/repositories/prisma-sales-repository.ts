@@ -5,7 +5,7 @@ import {
   SortType,
 } from '../../../../application/repositories/sales-repository';
 import { Sale } from '../../../../application/entities/sale';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { PaginationParams } from '@/@shared/pagination-interface';
 
@@ -79,25 +79,117 @@ export class PrismaSalesRepository extends SalesRepository {
     });
   }
 
-  async updateStock(productId: string, quantity: number): Promise<void> {
+  async updateStock(
+    productId: string,
+    quantity: number,
+    status: BottleStatus,
+  ): Promise<void> {
     const product = await this.prismaService.product.findUnique({
       where: { id: productId },
     });
 
     if (!product) {
-      throw new Error('Produto não encontrado');
+      throw new BadRequestException('Produto não encontrado', {
+        cause: new Error('Produto não encontrado'),
+        description: 'Produto não encontrado',
+      });
     }
 
-    const newStock = product.quantity + quantity;
+    if (status === 'FULL') {
+      const newStock = product.quantity - quantity;
 
-    if (newStock < 0) {
-      throw new Error('Estoque insuficiente');
+      if (newStock < 0) {
+        throw new BadRequestException('Estoque insuficiente', {
+          cause: new Error('Estoque insuficiente'),
+          description: 'Estoque insuficiente',
+        });
+      }
+
+      await this.prismaService.product.update({
+        where: { id: productId },
+        data: { quantity: newStock },
+      });
+
+      return;
     }
 
-    await this.prismaService.product.update({
-      where: { id: productId },
-      data: { quantity: newStock },
-    });
+    if (status === 'EMPTY') {
+      const productFull = await this.prismaService.product.findFirst({
+        where: {
+          type: product.type,
+          status: 'FULL',
+        },
+      });
+
+      const newStockFull = productFull.quantity - quantity;
+
+      if (newStockFull < 0) {
+        throw new BadRequestException('Estoque insuficiente', {
+          cause: new Error('Estoque insuficiente'),
+          description: 'Estoque insuficiente',
+        });
+      }
+
+      const newStock = product.quantity + quantity;
+
+      if (newStock < 0) {
+        throw new BadRequestException('Estoque insuficiente', {
+          cause: new Error('Estoque insuficiente'),
+          description: 'Estoque insuficiente',
+        });
+      }
+
+      await this.prismaService.product.update({
+        where: { id: productFull.id },
+        data: { quantity: newStockFull },
+      });
+
+      await this.prismaService.product.update({
+        where: { id: productId },
+        data: { quantity: newStock },
+      });
+
+      return;
+    }
+
+    if (status === 'COMODATO') {
+      const productFull = await this.prismaService.product.findFirst({
+        where: {
+          type: product.type,
+          status: 'FULL',
+        },
+      });
+
+      const newStockFull = productFull.quantity - quantity;
+
+      if (newStockFull < 0) {
+        throw new BadRequestException('Estoque insuficiente', {
+          cause: new Error('Estoque insuficiente'),
+          description: 'Estoque insuficiente',
+        });
+      }
+
+      const newStock = product.quantity + quantity;
+
+      if (newStock < 0) {
+        throw new BadRequestException('Estoque insuficiente', {
+          cause: new Error('Estoque insuficiente'),
+          description: 'Estoque insuficiente',
+        });
+      }
+
+      await this.prismaService.product.update({
+        where: { id: productFull.id },
+        data: { quantity: newStockFull },
+      });
+
+      await this.prismaService.product.update({
+        where: { id: productId },
+        data: { quantity: newStock },
+      });
+
+      return;
+    }
   }
   async findById(id: string): Promise<Sale | null> {
     const raw = await this.prismaService.sales.findUnique({
@@ -268,7 +360,7 @@ export class PrismaSalesRepository extends SalesRepository {
     const raw = await this.prismaService.sales.findMany({
       where: {
         products: {
-          every: {
+          some: {
             product: {
               status: 'COMODATO',
             },
@@ -277,8 +369,13 @@ export class PrismaSalesRepository extends SalesRepository {
       },
       include: {
         products: {
+          where: {
+            product: {
+              status: 'COMODATO',
+            },
+          },
           include: {
-            product: true,
+            product: true, // Inclui os detalhes do produto
           },
         },
         transaction: {

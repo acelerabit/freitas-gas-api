@@ -11,6 +11,10 @@ export class DateService {
     return dayjs(date).toISOString();
   }
 
+  toDate(date: string | Date) {
+    return dayjs(date).toDate();
+  }
+
   // Método para verificar se a data passada já ocorreu
   isDatePassed(date: string | Date): boolean {
     return dayjs(date).isBefore(dayjs(), 'day');
