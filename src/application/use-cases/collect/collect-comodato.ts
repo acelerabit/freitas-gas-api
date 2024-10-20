@@ -57,7 +57,7 @@ export class CollectComodatoUseCase {
       );
     }
 
-    await this.productsRepository.collect(quantity);
+    // await this.productsRepository.collect(quantity);
 
     // setar algo nos itens em comodato desse cliente como recolhidos
   }
