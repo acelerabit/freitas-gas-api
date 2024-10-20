@@ -36,9 +36,9 @@ export class CollectComodatoUseCase {
 
     const quantityInComodato =
       await this.salesRepository.findComodatoByCustomer(customerId);
-
+ 
     if (quantityInComodato !== 0 && !quantityInComodato) {
-      throw new BadRequestException('Cliente não tem itens em comodato', {
+      throw new BadRequestException('Cliente não tem itens suficientes em comodato', {
         cause: new Error('Cliente não tem itens em comodato'),
         description: 'Cliente não tem itens em comodato',
       });
