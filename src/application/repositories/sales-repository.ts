@@ -26,6 +26,7 @@ export abstract class SalesRepository {
     products: { id: string; quantity: number }[],
   ): Promise<void>;
   abstract findAllComodato(pagination?: PaginationParams): Promise<Sale[]>;
+  abstract findComodatoByCustomer(customerId: string): Promise<number>;
   abstract findAll(
     deliveryman?: string,
     customer?: string,
@@ -36,6 +37,10 @@ export abstract class SalesRepository {
       startDate: Date;
       endDate: Date;
     },
+    pagination?: PaginationParams,
+  ): Promise<Sale[]>;
+  abstract findAllByDeliveryman(
+    deliverymanId: string,
     pagination?: PaginationParams,
   ): Promise<Sale[]>;
   abstract deleteSale(saleId: string): Promise<void>;
