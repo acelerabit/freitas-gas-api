@@ -25,6 +25,10 @@ export abstract class TransactionRepository {
     },
     pagination?: PaginationParams,
   ): Promise<Transaction[]>;
+  abstract findAllExpensesByDeliveryman(
+    deliverymanId: string,
+    pagination: PaginationParams,
+  ): Promise<Transaction[]>;
   abstract findAllExpenses(
     pagination: PaginationParams,
   ): Promise<Transaction[]>;

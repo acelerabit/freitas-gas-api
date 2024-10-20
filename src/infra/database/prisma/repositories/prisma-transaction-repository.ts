@@ -138,6 +138,30 @@ export class PrismaTransactionRepository extends TransactionRepository {
     return transactions.map(PrismaTransactionsMapper.toDomain);
   }
 
+  async findAllExpensesByDeliveryman(
+    deliverymanId: string,
+    pagination: PaginationParams,
+  ): Promise<Transaction[]> {
+    const transactions = await this.prismaService.transaction.findMany({
+      where: {
+        AND: [
+          {
+            category: 'EXPENSE',
+          },
+          {
+            userId: deliverymanId,
+          },
+        ],
+      },
+      take: Number(pagination.itemsPerPage),
+      skip: (pagination.page - 1) * Number(pagination.itemsPerPage),
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    return transactions.map(PrismaTransactionsMapper.toDomain);
+  }
+
   async findById(id: string): Promise<Transaction | null> {
     const raw = await this.prismaService.transaction.findFirst({
       where: {
