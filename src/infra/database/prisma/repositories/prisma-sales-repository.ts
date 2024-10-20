@@ -356,6 +356,88 @@ export class PrismaSalesRepository extends SalesRepository {
     return raw.map(PrismaSalesMapper.toDomain);
   }
 
+  async findAllByDeliveryman(
+    deliverymanId: string,
+    pagination?: PaginationParams,
+  ): Promise<Sale[]> {
+    const raw = await this.prismaService.sales.findMany({
+      where: {
+        transaction: {
+          userId: deliverymanId,
+        },
+      },
+      include: {
+        products: {
+          include: {
+            product: true,
+          },
+        },
+        transaction: {
+          include: {
+            user: true,
+          },
+        },
+        customer: true,
+      },
+      take: pagination.itemsPerPage,
+      skip: (pagination.page - 1) * pagination.itemsPerPage,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return raw.map(PrismaSalesMapper.toDomain);
+  }
+
+  async findComodatoByCustomer(customerId: string): Promise<number> {
+    const raw = await this.prismaService.sales.findMany({
+      where: {
+        AND: [
+          {
+            products: {
+              some: {
+                product: {
+                  status: 'COMODATO',
+                },
+              },
+            },
+          },
+          {
+            customerId,
+          },
+        ],
+      },
+      include: {
+        products: {
+          where: {
+            product: {
+              status: 'COMODATO',
+            },
+          },
+          include: {
+            product: true, // Inclui os detalhes do produto
+          },
+        },
+        transaction: {
+          include: {
+            user: true,
+          },
+        },
+        customer: true,
+      },
+    });
+
+    const count = raw.reduce((total, sale) => {
+      const productCount = sale.products.reduce(
+        (sum, product) => sum + product.quantity,
+        0,
+      );
+      return total + productCount;
+    }, 0);
+
+    return count;
+  }
+
   async findAllComodato(pagination?: PaginationParams): Promise<Sale[]> {
     const raw = await this.prismaService.sales.findMany({
       where: {
