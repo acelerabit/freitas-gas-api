@@ -489,4 +489,59 @@ export class PrismaSalesRepository extends SalesRepository {
       totalPerMonth: formattedTotalPerMonth,
     };
   }
+  async getAverageSales(
+    startDate?: Date,
+    endDate?: Date,
+    deliverymanId?: string,
+  ): Promise<{
+    averageDailySales: number;
+    averageMonthlySales: number;
+  }> {
+    const today = new Date();
+  
+    if (!startDate || isNaN(startDate.getTime())) {
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    }
+  
+    if (!endDate || isNaN(endDate.getTime())) {
+      endDate = today;
+    }
+  
+    const whereFilter: any = {
+      createdAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+      ...(deliverymanId
+        ? {
+            transaction: {
+              userId: deliverymanId,
+            },
+          }
+        : {}),
+    };
+  
+    const sales = await this.prismaService.sales.findMany({
+      where: whereFilter,
+      select: {
+        total: true,
+      },
+    });
+  
+    const totalSalesAmount = sales.reduce((acc, sale) => acc + Number(sale.total), 0);
+    const numberOfDays = Math.floor(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+    ) + 1;
+  
+    const currentMonth = endDate.getMonth() - startDate.getMonth() + 1;
+    const numberOfMonths = currentMonth;
+  
+    const averageDailySales = totalSalesAmount / numberOfDays;
+    const averageMonthlySales = totalSalesAmount / numberOfMonths;
+  
+    return {
+      averageDailySales: Number(averageDailySales?.toFixed(2)) || 0,
+      averageMonthlySales: Number(averageMonthlySales?.toFixed(2)) || 0,
+    };
+  }   
 }

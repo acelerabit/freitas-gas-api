@@ -23,6 +23,7 @@ import { UpdateSaleBody } from './dtos/update-sale-body';
 import { UpdateSaleUseCase } from '@/application/use-cases/sale/update-sale';
 import { FetchComodatoSalesUseCase } from '@/application/use-cases/sale/fetch-comodato-sales';
 import { GetSalesIndicatorsUseCase } from '@/application/use-cases/sale/get-sales-indicators';
+import { GetAverageSalesUseCase } from '@/application/use-cases/sale/get-average-sales';
 
 @Controller('sales')
 export class SalesController {
@@ -34,6 +35,7 @@ export class SalesController {
     private updateSaleUseCase: UpdateSaleUseCase,
     private fetchComodatoSalesUseCase: FetchComodatoSalesUseCase,
     private getSalesIndicatorsUseCase: GetSalesIndicatorsUseCase,
+    private getAverageSalesUseCase: GetAverageSalesUseCase,
   ) {}
 
   @Post()
@@ -173,6 +175,32 @@ export class SalesController {
     );
 
     return indicators;
+  }
+
+  @Get('/average-sales')
+  async getAverageSales(
+    @Query()
+    query: {
+      startDate: string;
+      endDate: string;
+      deliverymanId?: string;
+    },
+  ) {
+    const { startDate, endDate, deliverymanId } = query;
+
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+
+    const averageSales = await this.getAverageSalesUseCase.execute({
+      startDate: startDateObj,
+      endDate: endDateObj,
+      deliverymanId,
+    });
+
+    return {
+      averageDailySales: averageSales.averageDailySales,
+      averageMonthlySales: averageSales.averageMonthlySales,
+    };
   }
 
   @Get('/:id')
