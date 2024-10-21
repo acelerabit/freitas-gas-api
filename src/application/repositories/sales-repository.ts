@@ -61,12 +61,4 @@ export abstract class SalesRepository {
     totalPerDay: { createdAt: Date; total: number }[];
     totalPerMonth: { year: number; month: number; total: number }[];
   }>;
-  abstract getAverageSales(
-    startDate: Date,
-    endDate: Date,
-    deliverymanId?: string,
-  ): Promise<{
-    averageDailySales: number;
-    averageMonthlySales: number;
-  }>;
 }
