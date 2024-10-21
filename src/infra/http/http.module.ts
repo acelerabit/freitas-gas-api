@@ -78,6 +78,7 @@ import { CalculateCompanyBalance } from '@/application/use-cases/transaction/cal
 import { TransferToDeliveryman } from '@/application/use-cases/transaction/transfer-to-deliveryman';
 import { FetchDeliverymans } from '@/application/use-cases/user/fetch-deliverymans';
 import { GetAverageSalesUseCase } from '@/application/use-cases/sale/get-average-sales';
+import { GetExpenseIndicators } from '@/application/use-cases/transaction/get-expense-indicators';
 
 @Module({
   controllers: [
@@ -158,6 +159,7 @@ import { GetAverageSalesUseCase } from '@/application/use-cases/sale/get-average
     TransferToDeliveryman,
     FetchDeliverymans,
     GetAverageSalesUseCase,
+    GetExpenseIndicators,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

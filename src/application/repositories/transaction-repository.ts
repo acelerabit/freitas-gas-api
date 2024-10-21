@@ -35,4 +35,13 @@ export abstract class TransactionRepository {
   abstract findById(id: string): Promise<Transaction | null>;
   abstract update(transaction: Transaction): Promise<void>;
   abstract delete(id: string): Promise<void>;
+  abstract getExpenseIndicators(
+    startDate: Date,
+    endDate: Date,
+    deliverymanId?: string,
+  ): Promise<{
+    totalExpenses: number;
+    totalPerDay: { createdAt: Date; total: number }[];
+    totalPerMonth: { year: number; month: number; total: number }[];
+  }>;
 }

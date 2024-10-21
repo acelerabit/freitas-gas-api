@@ -236,4 +236,74 @@ export class PrismaTransactionRepository extends TransactionRepository {
       },
     });
   }
+
+  async getExpenseIndicators(
+    startDate: Date,
+    endDate: Date,
+    deliverymanId?: string,
+  ): Promise<{
+    totalExpenses: number;
+    totalPerDay: { createdAt: Date; total: number }[];
+    totalPerMonth: { year: number; month: number; total: number }[];
+  }> {
+    const whereFilter: any = {
+      createdAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+      category: TransactionCategory.EXPENSE,
+      ...(deliverymanId ? { userId: deliverymanId } : {}),
+    };
+
+    const totalExpenses = await this.prismaService.transaction.aggregate({
+      _sum: {
+        amount: true,
+      },
+      where: whereFilter,
+    });
+
+    const expensesPerDay = await this.prismaService.transaction.findMany({
+      where: whereFilter,
+      select: {
+        createdAt: true,
+        amount: true,
+      },
+    });
+
+    const totalPerDay = expensesPerDay.reduce((acc, expense) => {
+      const date = expense.createdAt.toISOString().split('T')[0];
+
+      if (!acc[date]) {
+        acc[date] = { createdAt: expense.createdAt, total: 0 };
+      }
+
+      acc[date].total += Number(expense.amount) / 100;
+      return acc;
+    }, {} as Record<string, { createdAt: Date; total: number }>);
+
+    const formattedTotalPerDay = Object.values(totalPerDay);
+
+    const expensesPerMonth = await this.prismaService.transaction.groupBy({
+      by: ['createdAt'],
+      where: whereFilter,
+      _sum: {
+        amount: true,
+      },
+    });
+
+    const totalPerMonth = expensesPerMonth.map((expense) => {
+      const date = new Date(expense.createdAt);
+      return {
+        year: date.getFullYear(),
+        month: date.getMonth() + 1,
+        total: Number(expense._sum.amount) / 100,
+      };
+    });
+
+    return {
+      totalExpenses: Number(totalExpenses._sum.amount || 0) / 100,
+      totalPerDay: formattedTotalPerDay,
+      totalPerMonth,
+    };
+  }
 }

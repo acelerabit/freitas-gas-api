@@ -23,6 +23,7 @@ import { SortType } from '@/application/repositories/transaction-repository';
 import { CalculateCompanyBalance } from '@/application/use-cases/transaction/calculate-company-balance';
 import { TransferToDeliveryman } from '@/application/use-cases/transaction/transfer-to-deliveryman';
 import { TransferToDeliverymanBody } from './dtos/transfer-to-deliveryman-body';
+import { GetExpenseIndicators } from '@/application/use-cases/transaction/get-expense-indicators';
 
 @Controller('transactions')
 export class TransactionsController {
@@ -35,6 +36,7 @@ export class TransactionsController {
     private fetchAllExpenses: FetchExpenses,
     private calculateCompanyBalance: CalculateCompanyBalance,
     private transferToDeliveryman: TransferToDeliveryman,
+    private getExpenseIndicators: GetExpenseIndicators,
   ) {}
 
   @Post()
@@ -152,5 +154,19 @@ export class TransactionsController {
         name: expenseType.name,
       };
     });
+  }
+
+  @Get('/expenses/indicators')
+  async getIndicators(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('deliverymanId') deliverymanId?: string,
+  ) {
+    const result = await this.getExpenseIndicators.execute(
+      new Date(startDate),
+      new Date(endDate),
+      deliverymanId,
+    );
+    return result;
   }
 }

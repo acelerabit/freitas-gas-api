@@ -505,27 +505,21 @@ export class PrismaSalesRepository extends SalesRepository {
     totalPerDay: { createdAt: Date; total: number }[];
     totalPerMonth: { year: number; month: number; total: number }[];
   }> {
-    const whereFilter = {
+    const whereFilter: any = {
       createdAt: {
         gte: startDate,
         lte: endDate,
       },
-      ...(deliverymanId
-        ? {
-            transaction: {
-              userId: deliverymanId,
-            },
-          }
-        : {}),
+      ...(deliverymanId ? { transaction: { userId: deliverymanId } } : {}),
     };
-
+  
     const totalSales = await this.prismaService.sales.aggregate({
       _sum: {
         total: true,
       },
       where: whereFilter,
     });
-
+  
     const salesPerDay = await this.prismaService.sales.findMany({
       where: whereFilter,
       select: {
@@ -533,44 +527,44 @@ export class PrismaSalesRepository extends SalesRepository {
         total: true,
       },
     });
-
+  
     const totalPerDay = salesPerDay.reduce((acc, sale) => {
       const date = sale.createdAt.toISOString().split('T')[0];
-
+      
       if (!acc[date]) {
         acc[date] = { createdAt: sale.createdAt, total: 0 };
       }
-
+      
       acc[date].total += Number(sale.total);
       return acc;
     }, {} as Record<string, { createdAt: Date; total: number }>);
-
+  
     const formattedTotalPerDay = Object.values(totalPerDay);
-
-    const totalPerMonth = await this.prismaService.$queryRaw<
-      { year: number; month: number; total: number }[]
-    >`
-      SELECT 
-        EXTRACT(YEAR FROM "created_at") AS year,
-        EXTRACT(MONTH FROM "created_at") AS month,
-        SUM(total) AS total
-      FROM sales
-      WHERE "created_at" >= ${startDate} AND "created_at" <= ${endDate}
-      GROUP BY year, month
-    `;
-
-    const formattedTotalPerMonth = totalPerMonth.map((item) => ({
-      year: item.year,
-      month: item.month,
-      total: Number(item.total),
-    }));
-
+  
+    const salesPerMonth = await this.prismaService.sales.groupBy({
+      by: ['createdAt'],
+      where: whereFilter,
+      _sum: {
+        total: true,
+      },
+    });
+  
+    const totalPerMonth = salesPerMonth.map(sale => {
+      const date = new Date(sale.createdAt);
+      return {
+        year: date.getFullYear(),
+        month: date.getMonth() + 1,
+        total: Number(sale._sum.total),
+      };
+    });
+  
     return {
       totalSales: Number(totalSales._sum.total || 0),
       totalPerDay: formattedTotalPerDay,
-      totalPerMonth: formattedTotalPerMonth,
+      totalPerMonth,
     };
   }
+
   async getAverageSales(
     startDate?: Date,
     endDate?: Date,
@@ -580,15 +574,15 @@ export class PrismaSalesRepository extends SalesRepository {
     averageMonthlySales: number;
   }> {
     const today = new Date();
-  
+
     if (!startDate || isNaN(startDate.getTime())) {
       startDate = new Date(today.getFullYear(), today.getMonth(), 1);
     }
-  
+
     if (!endDate || isNaN(endDate.getTime())) {
       endDate = today;
     }
-  
+
     const whereFilter: any = {
       createdAt: {
         gte: startDate,
@@ -602,28 +596,32 @@ export class PrismaSalesRepository extends SalesRepository {
           }
         : {}),
     };
-  
+
     const sales = await this.prismaService.sales.findMany({
       where: whereFilter,
       select: {
         total: true,
       },
     });
-  
-    const totalSalesAmount = sales.reduce((acc, sale) => acc + Number(sale.total), 0);
-    const numberOfDays = Math.floor(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-    ) + 1;
-  
+
+    const totalSalesAmount = sales.reduce(
+      (acc, sale) => acc + Number(sale.total),
+      0,
+    );
+    const numberOfDays =
+      Math.floor(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+      ) + 1;
+
     const currentMonth = endDate.getMonth() - startDate.getMonth() + 1;
     const numberOfMonths = currentMonth;
-  
+
     const averageDailySales = totalSalesAmount / numberOfDays;
     const averageMonthlySales = totalSalesAmount / numberOfMonths;
-  
+
     return {
       averageDailySales: Number(averageDailySales?.toFixed(2)) || 0,
       averageMonthlySales: Number(averageMonthlySales?.toFixed(2)) || 0,
     };
-  }   
+  }
 }
