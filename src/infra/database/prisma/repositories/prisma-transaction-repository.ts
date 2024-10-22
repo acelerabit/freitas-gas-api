@@ -306,4 +306,42 @@ export class PrismaTransactionRepository extends TransactionRepository {
       totalPerMonth,
     };
   }
+  async getExpenseProportionByCustomCategory(
+    startDate?: Date,
+    endDate?: Date,
+    deliverymanId?: string,
+  ): Promise<{ category: string; percentage: number }[]> {
+    const whereFilter: any = {
+      category: TransactionCategory.EXPENSE,
+      ...(deliverymanId ? { userId: deliverymanId } : {}),
+    };
+
+    if (startDate && endDate) {
+      whereFilter.createdAt = {
+        gte: startDate,
+        lte: endDate,
+      };
+    }
+
+    const totalExpenses = await this.prismaService.transaction.aggregate({
+      _sum: { amount: true },
+      where: whereFilter,
+    });
+
+    const expenseByCategory = await this.prismaService.transaction.groupBy({
+      by: ['customCategory'],
+      _sum: { amount: true },
+      where: whereFilter,
+    });
+
+    const totalAmount = totalExpenses._sum.amount || 0;
+
+    return expenseByCategory.map((expense) => ({
+      category: expense.customCategory,
+      percentage:
+        totalAmount > 0
+          ? Number(((expense._sum.amount / totalAmount) * 100).toFixed(2))
+          : 0,
+    }));
+  }
 }

@@ -24,6 +24,7 @@ import { CalculateCompanyBalance } from '@/application/use-cases/transaction/cal
 import { TransferToDeliveryman } from '@/application/use-cases/transaction/transfer-to-deliveryman';
 import { TransferToDeliverymanBody } from './dtos/transfer-to-deliveryman-body';
 import { GetExpenseIndicators } from '@/application/use-cases/transaction/get-expense-indicators';
+import { GetExpenseProportionByCategoryUseCase } from '@/application/use-cases/transaction/get-expense-proportion-by-category';
 
 @Controller('transactions')
 export class TransactionsController {
@@ -37,6 +38,7 @@ export class TransactionsController {
     private calculateCompanyBalance: CalculateCompanyBalance,
     private transferToDeliveryman: TransferToDeliveryman,
     private getExpenseIndicators: GetExpenseIndicators,
+    private readonly getExpenseProportionByCategoryUseCase: GetExpenseProportionByCategoryUseCase,
   ) {}
 
   @Post()
@@ -168,5 +170,23 @@ export class TransactionsController {
       deliverymanId,
     );
     return result;
+  }
+  @Get('/expenses/proportion-by-category')
+  async getExpenseProportionByCategory(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('deliverymanId') deliverymanId?: string,
+  ) {
+    const start = startDate ? new Date(startDate) : undefined;
+    const end = endDate ? new Date(endDate) : undefined;
+
+    const expenseProportions =
+      await this.getExpenseProportionByCategoryUseCase.execute(
+        start,
+        end,
+        deliverymanId,
+      );
+
+    return expenseProportions;
   }
 }

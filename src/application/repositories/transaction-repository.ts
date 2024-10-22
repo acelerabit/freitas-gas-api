@@ -44,4 +44,9 @@ export abstract class TransactionRepository {
     totalPerDay: { createdAt: Date; total: number }[];
     totalPerMonth: { year: number; month: number; total: number }[];
   }>;
+  abstract getExpenseProportionByCustomCategory(
+    startDate: Date,
+    endDate: Date,
+    deliverymanId?: string,
+  ): Promise<{ category: string; percentage: number }[]>;
 }

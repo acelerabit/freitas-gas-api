@@ -79,6 +79,7 @@ import { TransferToDeliveryman } from '@/application/use-cases/transaction/trans
 import { FetchDeliverymans } from '@/application/use-cases/user/fetch-deliverymans';
 import { GetAverageSalesUseCase } from '@/application/use-cases/sale/get-average-sales';
 import { GetExpenseIndicators } from '@/application/use-cases/transaction/get-expense-indicators';
+import { GetExpenseProportionByCategoryUseCase } from '@/application/use-cases/transaction/get-expense-proportion-by-category';
 
 @Module({
   controllers: [
@@ -160,6 +161,7 @@ import { GetExpenseIndicators } from '@/application/use-cases/transaction/get-ex
     FetchDeliverymans,
     GetAverageSalesUseCase,
     GetExpenseIndicators,
+    GetExpenseProportionByCategoryUseCase,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })
