@@ -7,7 +7,6 @@ export class SalesPresenters {
       customer: sale.customer ?? null,
       deliveryman: sale.deliveryman,
       products: sale.products.map((product) => {
-        // console.log(product);
         return {
           id: product.id,
           type: product.type,

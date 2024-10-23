@@ -31,6 +31,8 @@ export class PrismaTransactionRepository extends TransactionRepository {
       createdAt: transaction.createdAt,
       customCategory: transaction.customCategory ?? null,
       description: transaction.description,
+      depositDate: transaction.depositDate,
+      bank: transaction.bank,
     };
 
     await this.prismaService.transaction.create({
@@ -159,7 +161,36 @@ export class PrismaTransactionRepository extends TransactionRepository {
         createdAt: 'desc',
       },
     });
+
     return transactions.map(PrismaTransactionsMapper.toDomain);
+  }
+
+  async getTotalExpensesByDeliveryman(id: string): Promise<number> {
+    const { startOfDay, endOfDay } = this.dateService.startAndEndOfTheDay(); // Fim do dia atual
+
+    const total = await this.prismaService.transaction.aggregate({
+      _sum: {
+        amount: true, // Soma do campo amount
+      },
+      where: {
+        AND: [
+          {
+            category: 'EXPENSE',
+          },
+          {
+            userId: id,
+          },
+          {
+            createdAt: {
+              gte: startOfDay,
+              lte: endOfDay,
+            },
+          },
+        ],
+      },
+    });
+
+    return total._sum.amount || 0;
   }
 
   async findById(id: string): Promise<Transaction | null> {
@@ -190,14 +221,103 @@ export class PrismaTransactionRepository extends TransactionRepository {
     });
 
     const incomeTotal = transactionsSummary
-      .filter((t) => ['DEPOSIT', 'SALE', 'INCOME'].includes(t.category))
+      .filter((t) => ['DEPOSIT', 'INCOME'].includes(t.category)) // Primeiro filtro para 'DEPOSIT' e 'INCOME'
       .reduce((acc, curr) => acc + (curr._sum.amount || 0), 0);
 
-    const expenseTotal = transactionsSummary
-      .filter((t) => ['EXPENSE', 'WITHDRAW', 'TRANSFER'].includes(t.category))
-      .reduce((acc, curr) => acc + (curr._sum.amount || 0), 0);
+    // Somar apenas as transações do tipo 'SALE' que não tenham o 'paymentMethod' como 'DINHEIRO'
+    const saleTransactions = await this.prismaService.transaction.findMany({
+      where: {
+        category: 'SALE',
+        sales: {
+          some: {
+            paymentMethod: {
+              not: 'DINHEIRO',
+            },
+          },
+        },
+      },
+    });
 
-    const finalBalance = incomeTotal - expenseTotal;
+    const saleSummary = saleTransactions.reduce((acc, curr) => {
+      if (!acc[curr.category]) {
+        acc[curr.category] = { _sum: { amount: 0 } };
+      }
+      acc[curr.category]._sum.amount += curr.amount || 0;
+      return acc;
+    }, {});
+
+    const saleTotal = saleSummary['SALE'] ? saleSummary['SALE']._sum.amount : 0;
+
+    // Consulta separada para somar apenas as despesas onde o user.role é 'ADMIN'
+    const expenseTransactions = await this.prismaService.transaction.groupBy({
+      by: ['category'],
+      _sum: {
+        amount: true,
+      },
+      where: {
+        category: {
+          in: ['EXPENSE', 'WITHDRAW', 'TRANSFER'],
+        },
+        user: {
+          role: 'ADMIN',
+        },
+      },
+    });
+
+    const expenseTotal = expenseTransactions.reduce(
+      (acc, curr) => acc + (curr._sum.amount || 0),
+      0,
+    );
+
+    const finalBalance = incomeTotal + saleTotal - expenseTotal;
+
+    return finalBalance;
+  }
+
+  async calculateDeliverymanBalance(deliverymanId: string): Promise<number> {
+    const deliveryman = await this.prismaService.user.findUnique({
+      where: {
+        id: deliverymanId,
+      },
+    });
+
+    if (!deliveryman) {
+      return 0;
+    }
+
+    const saleTransactions = await this.prismaService.transaction.findMany({
+      where: {
+        category: 'SALE',
+        userId: deliverymanId,
+        sales: {
+          some: {
+            paymentMethod: {
+              equals: 'DINHEIRO',
+            },
+          },
+        },
+      },
+    });
+
+    // Somar as transações 'SALE'
+    const saleTotal = saleTransactions.reduce((acc, curr) => {
+      return acc + (curr.amount || 0);
+    }, 0);
+
+    const expenseTransactions = await this.prismaService.transaction.findMany({
+      where: {
+        category: {
+          in: ['EXPENSE', 'DEPOSIT'],
+        },
+        userId: deliverymanId,
+      },
+    });
+
+    const expenseTotal = expenseTransactions.reduce((acc, curr) => {
+      return acc + (curr.amount || 0);
+    }, 0);
+
+    const finalBalance = deliveryman.accountAmount + saleTotal - expenseTotal;
 
     return finalBalance;
   }

@@ -38,4 +38,17 @@ export class DateService {
     const unixDate = dayjs.unix(Number(unix_time));
     return dayjs(unixDate).utc().local().format();
   }
+  sevenDaysAgo() {
+    return dayjs().subtract(7, 'day').toDate();
+  }
+
+  startAndEndOfTheDay() {
+    const startOfDay = dayjs().startOf('day').toDate(); // Início do dia atual
+    const endOfDay = dayjs().endOf('day').toDate();
+
+    return {
+      startOfDay,
+      endOfDay,
+    };
+  }
 }

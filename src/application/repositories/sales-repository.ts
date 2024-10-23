@@ -42,6 +42,8 @@ export abstract class SalesRepository {
   abstract findAllByDeliveryman(
     deliverymanId: string,
     pagination?: PaginationParams,
+    startDate?: Date,
+    endDate?: Date,
   ): Promise<Sale[]>;
   abstract deleteSale(saleId: string): Promise<void>;
   abstract update(sale: Sale): Promise<void>;
@@ -69,4 +71,7 @@ export abstract class SalesRepository {
     averageDailySales: number;
     averageMonthlySales: number;
   }>;
+  abstract getTotalRevenuesByDeliveryman(
+    deliverymanId: string,
+  ): Promise<number>;
 }

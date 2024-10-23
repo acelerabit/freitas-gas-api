@@ -13,6 +13,8 @@ export class PrismaTransactionsMapper {
         customCategory: transaction.customCategory,
         referenceId: transaction.referenceId,
         description: transaction.description,
+        depositDate: transaction.depositDate,
+        bank: transaction.bank,
       },
       transaction.id,
     );
@@ -31,6 +33,8 @@ export class PrismaTransactionsMapper {
       customCategory: transaction.customCategory,
       referenceId: transaction.referenceId,
       description: transaction.description,
+      depositDate: transaction.depositDate,
+      bank: transaction.bank,
     };
   }
 }

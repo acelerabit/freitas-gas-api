@@ -1,10 +1,20 @@
 import { LoginWithGoogle } from '@/application/use-cases/authenticate/login-with-google';
 import { UsersMetrics } from '@/application/use-cases/dashboard/users-metrics';
+import { CreateDebt } from '@/application/use-cases/debt/create-debt';
 import { FetchAllUnreadNotifications } from '@/application/use-cases/notifications/fetch-all-unread-notifications';
 import { ReadAllNotifications } from '@/application/use-cases/notifications/read-all-unread-notifications';
 import { ReadNotification } from '@/application/use-cases/notifications/read-notification';
+import { DecreaseProductQuantityUseCase } from '@/application/use-cases/product/decrease-quantity';
+import { IncreaseProductQuantityUseCase } from '@/application/use-cases/product/increase-quantity';
 import { SendForgotEmail } from '@/application/use-cases/recovery-password/send-forgot-email';
 import { UpdatePassword } from '@/application/use-cases/recovery-password/update-password';
+import { FetchSalesByDeliverymanUseCase } from '@/application/use-cases/sale/fetch-by-deliveryman';
+import { FetchComodatoSalesUseCase } from '@/application/use-cases/sale/fetch-comodato-sales';
+import { GetTotalRevenuesDeliverymanToday } from '@/application/use-cases/sale/get-total-deliveryman-revenues-today';
+import { CalculateDeliverymanBalance } from '@/application/use-cases/transaction/calculate-deliberyman-balance';
+import { DepositToCompanyUseCase } from '@/application/use-cases/transaction/deposit-to-company';
+import { FetchExpensesByDeliveryman } from '@/application/use-cases/transaction/fetch-expenses-by-deliveryman';
+import { GetTotalExpensesDeliverymanToday } from '@/application/use-cases/transaction/get-total-expenses-deliveryman-today';
 import { UploadToProfile } from '@/application/use-cases/uploads/upload-to-profile';
 import { FetchUsers } from '@/application/use-cases/user/fetch-users';
 import { GetUser } from '@/application/use-cases/user/get-user';
@@ -15,7 +25,6 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginUser } from 'src/application/use-cases/authenticate/login-user';
 import { FetchAllLogs } from 'src/application/use-cases/logs/fetch-all-logs';
 import { CreateUser } from 'src/application/use-cases/user/create-user';
-import { BcryptHasher } from '../cryptography/bcrypt-hasher';
 import { CryptographyModule } from '../cryptography/cryptography.module';
 import { DatabaseModule } from '../database/database.module';
 import { EmailModule } from '../email/email.module';
@@ -56,10 +65,6 @@ import { DeleteTransaction } from '@/application/use-cases/transaction/delete-tr
 import { FindAllTransactionUseCase } from '@/application/use-cases/transaction/findall-transaction';
 import { UpdateTransactionUseCase } from '@/application/use-cases/transaction/update-transaction';
 import { FetchAllUsers } from '@/application/use-cases/user/fetch-all-user';
-import { IncreaseProductQuantityUseCase } from '@/application/use-cases/product/increase-quantity';
-import { DecreaseProductQuantityUseCase } from '@/application/use-cases/product/decrease-quantity';
-import { FetchComodatoSalesUseCase } from '@/application/use-cases/sale/fetch-comodato-sales';
-import { CreateDebt } from '@/application/use-cases/debt/create-debt';
 import { UpdateDebt } from '@/application/use-cases/debt/update-debt';
 import { CreateSupplier } from '@/application/use-cases/supplier/create-supplier';
 import { DeleteSupplier } from '@/application/use-cases/supplier/delete-supplier';
@@ -67,7 +72,6 @@ import { GetSupplier } from '@/application/use-cases/supplier/get-supplier';
 import { GetSupplierWithDebts } from '@/application/use-cases/supplier/get-supplier-with-debts';
 import { UpdateSupplier } from '@/application/use-cases/supplier/update-supplier';
 import { SupplierController } from './controllers/supplier/supplier.controller';
-import { DebtController } from './controllers/debt/debt.controller';
 import { GetAllSuppliers } from '@/application/use-cases/supplier/find-all-supplier';
 import { DeleteDebt } from '@/application/use-cases/debt/delete-debt';
 import { FetchExpenseTypesUseCase } from '@/application/use-cases/transaction/fetch-expense-types';
@@ -95,7 +99,6 @@ import { GetExpenseProportionByCategoryUseCase } from '@/application/use-cases/t
     ProductController,
     TransactionsController,
     SupplierController,
-    DebtController,
   ],
   providers: [
     CreateUser,
@@ -162,6 +165,12 @@ import { GetExpenseProportionByCategoryUseCase } from '@/application/use-cases/t
     GetAverageSalesUseCase,
     GetExpenseIndicators,
     GetExpenseProportionByCategoryUseCase,
+    FetchSalesByDeliverymanUseCase,
+    FetchExpensesByDeliveryman,
+    GetTotalExpensesDeliverymanToday,
+    GetTotalRevenuesDeliverymanToday,
+    CalculateDeliverymanBalance,
+    DepositToCompanyUseCase,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

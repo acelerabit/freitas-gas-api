@@ -25,6 +25,7 @@ export abstract class TransactionRepository {
     },
     pagination?: PaginationParams,
   ): Promise<Transaction[]>;
+  abstract calculateDeliverymanBalance(deliverymanId: string): Promise<number>;
   abstract findAllExpensesByDeliveryman(
     deliverymanId: string,
     pagination: PaginationParams,
@@ -49,4 +50,5 @@ export abstract class TransactionRepository {
     endDate: Date,
     deliverymanId?: string,
   ): Promise<{ category: string; percentage: number }[]>;
+  abstract getTotalExpensesByDeliveryman(id: string): Promise<number>;
 }
