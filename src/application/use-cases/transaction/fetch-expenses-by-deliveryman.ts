@@ -8,6 +8,10 @@ interface FetchExpensesByDeliverymanRequest {
   pagination: PaginationParams;
 }
 
+interface FetchExpensesByDeliverymanResponse {
+  transactions: Transaction[];
+}
+
 @Injectable()
 export class FetchExpensesByDeliveryman {
   constructor(private readonly transactionRepository: TransactionRepository) {}
@@ -15,10 +19,15 @@ export class FetchExpensesByDeliveryman {
   async execute({
     deliverymanId,
     pagination,
-  }: FetchExpensesByDeliverymanRequest): Promise<Transaction[]> {
-    return this.transactionRepository.findAllExpensesByDeliveryman(
-      deliverymanId,
-      pagination,
-    );
+  }: FetchExpensesByDeliverymanRequest): Promise<FetchExpensesByDeliverymanResponse> {
+    const transactions =
+      await this.transactionRepository.findAllExpensesByDeliveryman(
+        deliverymanId,
+        pagination,
+      );
+
+    return {
+      transactions,
+    };
   }
 }

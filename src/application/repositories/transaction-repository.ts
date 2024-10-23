@@ -25,6 +25,7 @@ export abstract class TransactionRepository {
     },
     pagination?: PaginationParams,
   ): Promise<Transaction[]>;
+  abstract calculateDeliverymanBalance(deliverymanId: string): Promise<number>;
   abstract findAllExpensesByDeliveryman(
     deliverymanId: string,
     pagination: PaginationParams,
@@ -35,4 +36,5 @@ export abstract class TransactionRepository {
   abstract findById(id: string): Promise<Transaction | null>;
   abstract update(transaction: Transaction): Promise<void>;
   abstract delete(id: string): Promise<void>;
+  abstract getTotalExpensesByDeliveryman(id: string): Promise<number>;
 }

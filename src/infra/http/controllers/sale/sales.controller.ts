@@ -23,6 +23,8 @@ import { UpdateSaleBody } from './dtos/update-sale-body';
 import { UpdateSaleUseCase } from '@/application/use-cases/sale/update-sale';
 import { FetchComodatoSalesUseCase } from '@/application/use-cases/sale/fetch-comodato-sales';
 import { GetSalesIndicatorsUseCase } from '@/application/use-cases/sale/get-sales-indicators';
+import { FetchSalesByDeliverymanUseCase } from '@/application/use-cases/sale/fetch-by-deliveryman';
+import { GetTotalRevenuesDeliverymanToday } from '@/application/use-cases/sale/get-total-deliveryman-revenues-today';
 
 @Controller('sales')
 export class SalesController {
@@ -34,6 +36,8 @@ export class SalesController {
     private updateSaleUseCase: UpdateSaleUseCase,
     private fetchComodatoSalesUseCase: FetchComodatoSalesUseCase,
     private getSalesIndicatorsUseCase: GetSalesIndicatorsUseCase,
+    private fetchSalesByDeliverymanUseCase: FetchSalesByDeliverymanUseCase,
+    private getTotalRevenuesDeliverymanToday: GetTotalRevenuesDeliverymanToday,
   ) {}
 
   @Post()
@@ -173,6 +177,40 @@ export class SalesController {
     );
 
     return indicators;
+  }
+
+  @Get('/deliveryman/:id')
+  async GetSalesByDeliveryman(
+    @Param('id') id: string,
+    @Query()
+    query: {
+      page?: string;
+      itemsPerPage?: string;
+      startDate?: Date;
+      endDate?: Date;
+    },
+  ) {
+    const { page, itemsPerPage, startDate, endDate } = query;
+    const { sales } = await this.fetchSalesByDeliverymanUseCase.execute({
+      deliverymanId: id,
+      pagination: {
+        page: Number(page),
+        itemsPerPage: Number(itemsPerPage),
+      },
+      startDate,
+      endDate,
+    });
+
+    return sales.map(SalesPresenters.toHTTP);
+  }
+
+  @Get('/revenues-total-today/:deliverymanId')
+  async revenuesToday(
+    @Param('deliverymanId') deliverymanId: string,
+  ): Promise<number> {
+    return this.getTotalRevenuesDeliverymanToday.execute({
+      deliverymanId,
+    });
   }
 
   @Get('/:id')

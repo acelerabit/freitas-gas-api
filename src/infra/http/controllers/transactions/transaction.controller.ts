@@ -23,6 +23,12 @@ import { SortType } from '@/application/repositories/transaction-repository';
 import { CalculateCompanyBalance } from '@/application/use-cases/transaction/calculate-company-balance';
 import { TransferToDeliveryman } from '@/application/use-cases/transaction/transfer-to-deliveryman';
 import { TransferToDeliverymanBody } from './dtos/transfer-to-deliveryman-body';
+import { FetchExpensesByDeliveryman } from '@/application/use-cases/transaction/fetch-expenses-by-deliveryman';
+import { ExpensesPresenters } from './presenters/expense.presenter';
+import { GetTotalExpensesDeliverymanToday } from '@/application/use-cases/transaction/get-total-expenses-deliveryman-today';
+import { CalculateDeliverymanBalance } from '@/application/use-cases/transaction/calculate-deliberyman-balance';
+import { DepositToCompanyUseCase } from '@/application/use-cases/transaction/deposit-to-company';
+import { DepositToCompanyBody } from './dtos/deposit-to-company-body';
 
 @Controller('transactions')
 export class TransactionsController {
@@ -35,6 +41,10 @@ export class TransactionsController {
     private fetchAllExpenses: FetchExpenses,
     private calculateCompanyBalance: CalculateCompanyBalance,
     private transferToDeliveryman: TransferToDeliveryman,
+    private fetchAllDeliverymanExpenses: FetchExpensesByDeliveryman,
+    private getTotalExpensesDeliverymanToday: GetTotalExpensesDeliverymanToday,
+    private calculateDeliverymanBalance: CalculateDeliverymanBalance,
+    private depositToCompany: DepositToCompanyUseCase,
   ) {}
 
   @Post()
@@ -93,9 +103,52 @@ export class TransactionsController {
     return this.fetchAllExpenses.execute(pagination);
   }
 
+  @Get('/expenses-total-today/:deliverymanId')
+  async expensesToday(
+    @Param('deliverymanId') deliverymanId: string,
+  ): Promise<number> {
+    return this.getTotalExpensesDeliverymanToday.execute({
+      deliverymanId,
+    });
+  }
+
+  @Get('/expenses/deliveryman/:id')
+  async FindAllDeliverymanExpenses(
+    @Param('id') id: string,
+    @Query()
+    query: {
+      page?: string;
+      itemsPerPage?: string;
+      startDate?: Date;
+      endDate?: Date;
+    },
+  ) {
+    const { page, itemsPerPage, startDate, endDate } = query;
+    const { transactions } = await this.fetchAllDeliverymanExpenses.execute({
+      deliverymanId: id,
+      pagination: {
+        itemsPerPage: Number(itemsPerPage),
+        page: Number(page),
+      },
+    });
+
+    return transactions.map(ExpensesPresenters.toHTTP);
+  }
+
   @Get('/balance')
   async balance(): Promise<number> {
     const { finalBalance } = await this.calculateCompanyBalance.execute();
+
+    return finalBalance;
+  }
+
+  @Get('/deliveryman/balance/:deliverymanId')
+  async deliverymanBalance(
+    @Param('deliverymanId') deliverymanId: string,
+  ): Promise<number> {
+    const { finalBalance } = await this.calculateDeliverymanBalance.execute({
+      deliverymanId,
+    });
 
     return finalBalance;
   }
@@ -108,6 +161,15 @@ export class TransactionsController {
     await this.transferToDeliveryman.execute({
       ...body,
       deliverymanId,
+    });
+
+    return;
+  }
+
+  @Post('/deposit')
+  async deposit(@Body() body: DepositToCompanyBody) {
+    await this.depositToCompany.execute({
+      ...body,
     });
 
     return;

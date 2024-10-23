@@ -8,10 +8,14 @@ import { Sale } from '../../../../application/entities/sale';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { PaginationParams } from '@/@shared/pagination-interface';
+import { DateService } from '@/infra/dates/date.service';
 
 @Injectable()
 export class PrismaSalesRepository extends SalesRepository {
-  constructor(private prismaService: PrismaService) {
+  constructor(
+    private prismaService: PrismaService,
+    private dateService: DateService,
+  ) {
     super();
   }
 
@@ -359,12 +363,27 @@ export class PrismaSalesRepository extends SalesRepository {
   async findAllByDeliveryman(
     deliverymanId: string,
     pagination?: PaginationParams,
+    startDate?: Date,
+    endDate?: Date,
   ): Promise<Sale[]> {
+    let whereFilter = {};
+
+    if (startDate && endDate) {
+      whereFilter = {
+        ...whereFilter,
+        createdAt: {
+          gte: new Date(startDate),
+          lte: new Date(endDate),
+        },
+      };
+    }
+
     const raw = await this.prismaService.sales.findMany({
       where: {
         transaction: {
           userId: deliverymanId,
         },
+        ...whereFilter,
       },
       include: {
         products: {
@@ -387,6 +406,31 @@ export class PrismaSalesRepository extends SalesRepository {
     });
 
     return raw.map(PrismaSalesMapper.toDomain);
+  }
+
+  async getTotalRevenuesByDeliveryman(deliverymanId: string): Promise<number> {
+    const { startOfDay, endOfDay } =
+      await this.dateService.startAndEndOfTheDay();
+    const total = await this.prismaService.transaction.aggregate({
+      _sum: {
+        amount: true,
+      },
+      where: {
+        sales: {
+          some: {
+            transaction: {
+              userId: deliverymanId,
+            },
+          },
+        },
+        createdAt: {
+          gte: startOfDay,
+          lt: endOfDay,
+        },
+      },
+    });
+
+    return total._sum.amount || 0;
   }
 
   async findComodatoByCustomer(customerId: string): Promise<number> {

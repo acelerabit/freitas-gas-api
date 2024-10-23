@@ -10,6 +10,7 @@ export class UsersPresenters {
       id: user.id,
       avatarUrl: user.avatarUrl,
       acceptNotifications: user.acceptNotifications,
+      accountAmount: user.accountAmount,
     };
   }
 }

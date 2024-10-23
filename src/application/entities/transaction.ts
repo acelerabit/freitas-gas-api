@@ -12,6 +12,8 @@ export interface TransactionProps {
   amount: number;
   description?: string;
   createdAt?: Date;
+  depositDate?: Date;
+  bank?: string;
 }
 
 export class Transaction {
@@ -46,12 +48,28 @@ export class Transaction {
     this._props.description = value;
   }
 
+  get bank(): string {
+    return this._props.bank;
+  }
+
+  set bank(value: string) {
+    this._props.bank = value;
+  }
+
   get createdAt(): Date {
     return this._props.createdAt;
   }
 
   set createdAt(value: Date) {
     this._props.createdAt = value;
+  }
+
+  get depositDate(): Date {
+    return this._props.depositDate;
+  }
+
+  set depositDate(value: Date) {
+    this._props.depositDate = value;
   }
 
   get transactionType(): TransactionType {
