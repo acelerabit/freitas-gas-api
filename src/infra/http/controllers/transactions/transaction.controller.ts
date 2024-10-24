@@ -31,6 +31,9 @@ import { GetTotalExpensesDeliverymanToday } from '@/application/use-cases/transa
 import { CalculateDeliverymanBalance } from '@/application/use-cases/transaction/calculate-deliberyman-balance';
 import { DepositToCompanyUseCase } from '@/application/use-cases/transaction/deposit-to-company';
 import { DepositToCompanyBody } from './dtos/deposit-to-company-body';
+import { GetSalesVsExpensesComparisonUseCase } from '@/application/use-cases/transaction/get-salevsexpense-comparisom';
+import { GetSalesVsExpensesComparisonResponse } from '@/application/use-cases/transaction/get-salevsexpense-comparisom';
+import { CalculateGrossProfit } from '@/application/use-cases/transaction/get-gross-profit';
 
 @Controller('transactions')
 export class TransactionsController {
@@ -49,6 +52,8 @@ export class TransactionsController {
     private getTotalExpensesDeliverymanToday: GetTotalExpensesDeliverymanToday,
     private calculateDeliverymanBalance: CalculateDeliverymanBalance,
     private depositToCompany: DepositToCompanyUseCase,
+    private getSalesVsExpensesComparisonUseCase: GetSalesVsExpensesComparisonUseCase,
+    private calculateGrossProfit: CalculateGrossProfit,
   ) {}
 
   @Post()
@@ -250,5 +255,35 @@ export class TransactionsController {
       );
 
     return expenseProportions;
+  }
+  @Get('/expenses/sales-vs-expenses')
+  async getSalesVsExpensesComparison(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('deliverymanId') deliverymanId?: string,
+  ): Promise<GetSalesVsExpensesComparisonResponse> {
+    const parsedStartDate = startDate ? new Date(startDate) : undefined;
+    const parsedEndDate = endDate ? new Date(endDate) : undefined;
+
+    const result = await this.getSalesVsExpensesComparisonUseCase.execute({
+      startDate: parsedStartDate,
+      endDate: parsedEndDate,
+      deliverymanId,
+    });
+
+    return result;
+  }
+  @Get('gross-profit')
+  async getGrossProfit(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('deliverymanId') deliverymanId?: string,
+  ): Promise<number> {
+    const result = await this.calculateGrossProfit.execute(
+      startDate ? new Date(startDate) : undefined,
+      endDate ? new Date(endDate) : undefined,
+      deliverymanId,
+    );
+    return result;
   }
 }

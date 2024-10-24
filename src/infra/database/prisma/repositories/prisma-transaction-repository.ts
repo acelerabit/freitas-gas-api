@@ -464,4 +464,101 @@ export class PrismaTransactionRepository extends TransactionRepository {
           : 0,
     }));
   }
+  async getSalesVsExpensesComparison(
+    startDate?: Date,
+    endDate?: Date,
+    deliverymanId?: string,
+  ): Promise<{
+    totalSales: { year: number; month: number; total: number }[];
+    totalExpenses: { year: number; month: number; total: number }[];
+  }> {
+    const totalSales = await this.prismaService.transaction.groupBy({
+      by: ['userId'],
+      where: {
+        category: TransactionCategory.SALE,
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+        ...(deliverymanId && { userId: deliverymanId }),
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+
+    const totalExpenses = await this.prismaService.transaction.groupBy({
+      by: ['userId'],
+      where: {
+        category: TransactionCategory.EXPENSE,
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+        ...(deliverymanId && { userId: deliverymanId }),
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+
+    return {
+      totalSales: totalSales.map(({ _sum }) => ({
+        year: new Date().getFullYear(),
+        month: new Date().getMonth() + 1,
+        total: _sum.amount || 0,
+      })),
+      totalExpenses: totalExpenses.map(({ _sum }) => ({
+        year: new Date().getFullYear(),
+        month: new Date().getMonth() + 1,
+        total: _sum.amount || 0,
+      })),
+    };
+  }
+  async getGrossProfit(
+    startDate?: Date,
+    endDate?: Date,
+    deliverymanId?: string,
+  ): Promise<number> {
+    const totalSales = await this.prismaService.transaction.groupBy({
+      by: ['userId'],
+      where: {
+        category: TransactionCategory.SALE,
+        createdAt: {
+          gte: startDate || new Date(0),
+          lte: endDate || new Date(),
+        },
+        ...(deliverymanId && { userId: deliverymanId }),
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+
+    const totalExpenses = await this.prismaService.transaction.groupBy({
+      by: ['userId'],
+      where: {
+        category: TransactionCategory.EXPENSE,
+        createdAt: {
+          gte: startDate || new Date(0),
+          lte: endDate || new Date(),
+        },
+        ...(deliverymanId && { userId: deliverymanId }),
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+
+    const salesTotal = totalSales.reduce((acc, sale) => acc + (sale._sum.amount || 0), 0);
+    const expensesTotal = totalExpenses.reduce((acc, expense) => acc + (expense._sum.amount || 0), 0);
+
+    const formattedSalesTotal = parseFloat(salesTotal.toFixed(2));
+    const formattedExpensesTotal = parseFloat((expensesTotal / 100).toFixed(2));
+
+    const grossProfit = formattedSalesTotal - formattedExpensesTotal;
+    const formattedGrossProfit = grossProfit >= 0 ? parseFloat(grossProfit.toFixed(2)) : 0;
+
+    return formattedGrossProfit;
+  }
 }

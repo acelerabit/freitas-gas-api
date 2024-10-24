@@ -51,4 +51,17 @@ export abstract class TransactionRepository {
     deliverymanId?: string,
   ): Promise<{ category: string; percentage: number }[]>;
   abstract getTotalExpensesByDeliveryman(id: string): Promise<number>;
+  abstract getSalesVsExpensesComparison(
+    startDate?: Date,
+    endDate?: Date,
+    deliverymanId?: string,
+  ): Promise<{
+    totalSales: { year: number; month: number; total: number }[];
+    totalExpenses: { year: number; month: number; total: number }[];
+  }>;
+  abstract getGrossProfit(
+    startDate?: Date,
+    endDate?: Date,
+    deliverymanId?: string,
+  ): Promise<number>;  
 }
