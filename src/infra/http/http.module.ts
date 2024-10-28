@@ -86,6 +86,7 @@ import { GetExpenseIndicators } from '@/application/use-cases/transaction/get-ex
 import { GetExpenseProportionByCategoryUseCase } from '@/application/use-cases/transaction/get-expense-proportion-by-category';
 import { GetSalesVsExpensesComparisonUseCase } from '@/application/use-cases/transaction/get-salevsexpense-comparisom';
 import { CalculateGrossProfit } from '@/application/use-cases/transaction/get-gross-profit';
+import { DebtController } from './controllers/debt/debt.controller';
 
 @Module({
   controllers: [
@@ -101,6 +102,7 @@ import { CalculateGrossProfit } from '@/application/use-cases/transaction/get-gr
     ProductController,
     TransactionsController,
     SupplierController,
+    DebtController,
   ],
   providers: [
     CreateUser,

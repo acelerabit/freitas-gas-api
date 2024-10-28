@@ -118,6 +118,11 @@ export class RegisterSaleUseCase {
 
     await this.salesRepository.update(saleWithCustomerId);
 
+    if (saleWithCustomerId.paymentMethod === 'FIADO') {
+      customer.creditBalance += saleWithCustomerId.totalAmount;
+      await this.customerRepository.update(customer);
+    }
+
     if (saleWithCustomerId.isComodato()) {
       this.generateComodatoTerm(saleWithCustomerId);
     }
