@@ -92,6 +92,7 @@ import { FetchDeposits } from '@/application/use-cases/transaction/fetch-deposit
 import { GetTotalMoneySalesDeliverymanToday } from '@/application/use-cases/sale/get-total-money-today-deliveryman';
 import { FetchIncomeTypesUseCase } from '@/application/use-cases/transaction/fetch-income-types';
 import { FetchAllReadedNotifications } from '@/application/use-cases/notifications/fetch-all-readed-notifications';
+import { GetTotalMoneySalesByPaymentMethodFiado } from '@/application/use-cases/sale/get-total-sales-fiado';
 
 @Module({
   controllers: [
@@ -186,7 +187,8 @@ import { FetchAllReadedNotifications } from '@/application/use-cases/notificatio
     FetchDeposits,
     GetTotalMoneySalesDeliverymanToday,
     FetchIncomeTypesUseCase,
-    FetchAllReadedNotifications
+    FetchAllReadedNotifications,
+    GetTotalMoneySalesByPaymentMethodFiado
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

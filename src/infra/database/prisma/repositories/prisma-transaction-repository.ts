@@ -435,10 +435,12 @@ export class PrismaTransactionRepository extends TransactionRepository {
     totalPerDay: { createdAt: Date; total: number }[];
     totalPerMonth: { year: number; month: number; total: number }[];
   }> {
+    const adjustedEndDate = new Date(endDate);
+    adjustedEndDate.setUTCHours(23, 59, 59, 999);
     const whereFilter: any = {
       createdAt: {
         gte: startDate,
-        lte: endDate,
+        lte: adjustedEndDate,
       },
       category: TransactionCategory.EXPENSE,
       ...(deliverymanId ? { userId: deliverymanId } : {}),
@@ -500,6 +502,8 @@ export class PrismaTransactionRepository extends TransactionRepository {
     endDate?: Date,
     deliverymanId?: string,
   ): Promise<{ category: string; percentage: number }[]> {
+    const adjustedEndDate = new Date(endDate);
+    adjustedEndDate.setUTCHours(23, 59, 59, 999);
     const whereFilter: any = {
       category: TransactionCategory.EXPENSE,
       ...(deliverymanId ? { userId: deliverymanId } : {}),
@@ -508,7 +512,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
     if (startDate && endDate) {
       whereFilter.createdAt = {
         gte: startDate,
-        lte: endDate,
+        lte: adjustedEndDate,
       };
     }
 
@@ -529,7 +533,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
       category: expense.customCategory,
       percentage:
         totalAmount > 0
-          ? Number(((expense._sum.amount / totalAmount) * 100).toFixed(2))
+          ? Number(((expense._sum.amount / totalAmount) * 100)/100)
           : 0,
     }));
   }
@@ -541,47 +545,70 @@ export class PrismaTransactionRepository extends TransactionRepository {
     totalSales: { year: number; month: number; total: number }[];
     totalExpenses: { year: number; month: number; total: number }[];
   }> {
-    const totalSales = await this.prismaService.transaction.groupBy({
-      by: ['userId'],
+    const adjustedEndDate = new Date(endDate);
+    adjustedEndDate.setUTCHours(23, 59, 59, 999);
+    const totalSales = await this.prismaService.transaction.findMany({
       where: {
         category: TransactionCategory.SALE,
         createdAt: {
           gte: startDate,
-          lte: endDate,
+          lte: adjustedEndDate,
         },
         ...(deliverymanId && { userId: deliverymanId }),
       },
-      _sum: {
+      select: {
+        createdAt: true,
         amount: true,
       },
     });
+    const salesByMonth = totalSales.reduce((acc, transaction) => {
+      const year = transaction.createdAt.getFullYear();
+      const month = transaction.createdAt.getMonth() + 1;
+      const key = `${year}-${month}`;
 
-    const totalExpenses = await this.prismaService.transaction.groupBy({
-      by: ['userId'],
+      if (!acc[key]) {
+        acc[key] = { year, month, total: 0 };
+      }
+  
+      acc[key].total += transaction.amount/100 || 0;
+      return acc;
+    }, {} as Record<string, { year: number; month: number; total: number }>);
+  
+    const totalSalesByMonth = Object.values(salesByMonth);
+
+    const totalExpenses = await this.prismaService.transaction.findMany({
       where: {
         category: TransactionCategory.EXPENSE,
         createdAt: {
           gte: startDate,
-          lte: endDate,
+          lte: adjustedEndDate,
         },
         ...(deliverymanId && { userId: deliverymanId }),
       },
-      _sum: {
+      select: {
+        createdAt: true,
         amount: true,
       },
     });
 
+    const expensesByMonth = totalExpenses.reduce((acc, transaction) => {
+      const year = transaction.createdAt.getFullYear();
+      const month = transaction.createdAt.getMonth() + 1;
+      const key = `${year}-${month}`;
+  
+      if (!acc[key]) {
+        acc[key] = { year, month, total: 0 };
+      }
+      acc[key].total += transaction.amount/100 || 0;
+  
+      return acc;
+    }, {} as Record<string, { year: number; month: number; total: number }>);
+  
+    const totalExpensesByMonth = Object.values(expensesByMonth);
+  
     return {
-      totalSales: totalSales.map(({ _sum }) => ({
-        year: new Date().getFullYear(),
-        month: new Date().getMonth() + 1,
-        total: _sum.amount || 0,
-      })),
-      totalExpenses: totalExpenses.map(({ _sum }) => ({
-        year: new Date().getFullYear(),
-        month: new Date().getMonth() + 1,
-        total: _sum.amount || 0,
-      })),
+      totalSales: totalSalesByMonth,
+      totalExpenses: totalExpensesByMonth,
     };
   }
   async getGrossProfit(
@@ -589,13 +616,15 @@ export class PrismaTransactionRepository extends TransactionRepository {
     endDate?: Date,
     deliverymanId?: string,
   ): Promise<number> {
+    const adjustedEndDate = new Date(endDate);
+    adjustedEndDate.setUTCHours(23, 59, 59, 999);
     const totalSales = await this.prismaService.transaction.groupBy({
       by: ['userId'],
       where: {
         category: TransactionCategory.SALE,
         createdAt: {
           gte: startDate || new Date(0),
-          lte: endDate || new Date(),
+          lte: adjustedEndDate || new Date(),
         },
         ...(deliverymanId && { userId: deliverymanId }),
       },
@@ -610,7 +639,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
         category: TransactionCategory.EXPENSE,
         createdAt: {
           gte: startDate || new Date(0),
-          lte: endDate || new Date(),
+          lte: adjustedEndDate || new Date(),
         },
         ...(deliverymanId && { userId: deliverymanId }),
       },
@@ -622,7 +651,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
     const salesTotal = totalSales.reduce((acc, sale) => acc + (sale._sum.amount || 0), 0);
     const expensesTotal = totalExpenses.reduce((acc, expense) => acc + (expense._sum.amount || 0), 0);
 
-    const formattedSalesTotal = parseFloat(salesTotal.toFixed(2));
+    const formattedSalesTotal = parseFloat((salesTotal / 100).toFixed(2));
     const formattedExpensesTotal = parseFloat((expensesTotal / 100).toFixed(2));
 
     const grossProfit = formattedSalesTotal - formattedExpensesTotal;

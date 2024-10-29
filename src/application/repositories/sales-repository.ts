@@ -80,4 +80,9 @@ export abstract class SalesRepository {
   abstract getTotalRevenuesByDeliveryman(
     deliverymanId: string,
   ): Promise<number>;
+  abstract getTotalMoneySalesByPaymentMethodFiado(
+    startDate: Date,
+    endDate: Date,
+    deliverymanId?: string,
+  ): Promise<number>;
 }

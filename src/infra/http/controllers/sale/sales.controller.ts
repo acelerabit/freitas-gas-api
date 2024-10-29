@@ -27,6 +27,7 @@ import { GetAverageSalesUseCase } from '@/application/use-cases/sale/get-average
 import { FetchSalesByDeliverymanUseCase } from '@/application/use-cases/sale/fetch-by-deliveryman';
 import { GetTotalRevenuesDeliverymanToday } from '@/application/use-cases/sale/get-total-deliveryman-revenues-today';
 import { GetTotalMoneySalesDeliverymanToday } from '@/application/use-cases/sale/get-total-money-today-deliveryman';
+import { GetTotalMoneySalesByPaymentMethodFiado } from '@/application/use-cases/sale/get-total-sales-fiado';
 
 @Controller('sales')
 export class SalesController {
@@ -42,6 +43,7 @@ export class SalesController {
     private fetchSalesByDeliverymanUseCase: FetchSalesByDeliverymanUseCase,
     private getTotalRevenuesDeliverymanToday: GetTotalRevenuesDeliverymanToday,
     private getTotalMoneySalesDeliverymanToday: GetTotalMoneySalesDeliverymanToday,
+    private readonly getTotalMoneySalesByPaymentMethodFiado: GetTotalMoneySalesByPaymentMethodFiado,
   ) {}
 
   @Post()
@@ -247,6 +249,20 @@ export class SalesController {
     return this.getTotalMoneySalesDeliverymanToday.execute({
       deliverymanId,
     });
+  }
+
+  @Get('total-fiado')
+  async getTotalFiado(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('deliverymanId') deliverymanId?: string,
+  ) {
+    const total = await this.getTotalMoneySalesByPaymentMethodFiado.execute(
+      new Date(startDate),
+      new Date(endDate),
+      deliverymanId,
+    );
+    return { total };
   }
 
   @Get('/:id')

@@ -9,10 +9,10 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { PaginationParams } from '@/@shared/pagination-interface';
 import { DateService } from '@/infra/dates/date.service';
+import { fCurrencyIntlBRL } from '@/utils/formatCurrency';
 
 @Injectable()
 export class PrismaSalesRepository extends SalesRepository {
-
   constructor(
     private prismaService: PrismaService,
     private dateService: DateService,
@@ -468,33 +468,35 @@ export class PrismaSalesRepository extends SalesRepository {
     return total._sum.amount || 0;
   }
 
-  async getTotalMoneySalesByDeliverymanYesterday(deliverymanId: string): Promise<number> {
+  async getTotalMoneySalesByDeliverymanYesterday(
+    deliverymanId: string,
+  ): Promise<number> {
     const { startOfYesterday, endOfYesterday } =
       await this.dateService.startAndEndOfYesterday();
-      const total = await this.prismaService.transaction.aggregate({
-        _sum: {
-            amount: true,
-        },
-        where: {
-            sales: {
-                some: {
-                    AND: [
-                        {
-                            transaction: {
-                                userId: deliverymanId,
-                            },
-                        },
-                        {
-                            paymentMethod: 'DINHEIRO',
-                        },
-                    ],
+    const total = await this.prismaService.transaction.aggregate({
+      _sum: {
+        amount: true,
+      },
+      where: {
+        sales: {
+          some: {
+            AND: [
+              {
+                transaction: {
+                  userId: deliverymanId,
                 },
-            },
-            createdAt: {
-                gte: startOfYesterday,
-                lt: endOfYesterday,
-            },
+              },
+              {
+                paymentMethod: 'DINHEIRO',
+              },
+            ],
+          },
         },
+        createdAt: {
+          gte: startOfYesterday,
+          lt: endOfYesterday,
+        },
+      },
     });
 
     return total._sum.amount || 0;
@@ -616,10 +618,12 @@ export class PrismaSalesRepository extends SalesRepository {
     totalPerDay: { createdAt: Date; total: number }[];
     totalPerMonth: { year: number; month: number; total: number }[];
   }> {
+    const adjustedEndDate = new Date(endDate);
+    adjustedEndDate.setUTCHours(23, 59, 59, 999);
     const whereFilter: any = {
       createdAt: {
         gte: startDate,
-        lte: endDate,
+        lte: adjustedEndDate,
       },
       ...(deliverymanId ? { transaction: { userId: deliverymanId } } : {}),
     };
@@ -665,12 +669,12 @@ export class PrismaSalesRepository extends SalesRepository {
       return {
         year: date.getFullYear(),
         month: date.getMonth() + 1,
-        total: Number(sale._sum.total),
+        total: Number(sale._sum.total/100),
       };
     });
 
     return {
-      totalSales: Number(totalSales._sum.total || 0),
+      totalSales: Number(totalSales._sum.total/100 || 0),
       totalPerDay: formattedTotalPerDay,
       totalPerMonth,
     };
@@ -694,18 +698,14 @@ export class PrismaSalesRepository extends SalesRepository {
       endDate = today;
     }
 
+    const adjustedEndDate = new Date(endDate);
+    adjustedEndDate.setUTCHours(23, 59, 59, 999);
     const whereFilter: any = {
       createdAt: {
         gte: startDate,
-        lte: endDate,
+        lte: adjustedEndDate,
       },
-      ...(deliverymanId
-        ? {
-            transaction: {
-              userId: deliverymanId,
-            },
-          }
-        : {}),
+      ...(deliverymanId ? { transaction: { userId: deliverymanId } } : {}),
     };
 
     const sales = await this.prismaService.sales.findMany({
@@ -731,8 +731,40 @@ export class PrismaSalesRepository extends SalesRepository {
     const averageMonthlySales = totalSalesAmount / numberOfMonths;
 
     return {
-      averageDailySales: Number(averageDailySales?.toFixed(2)) || 0,
-      averageMonthlySales: Number(averageMonthlySales?.toFixed(2)) || 0,
+      averageDailySales: Number(averageDailySales?.toFixed(2))/100 || 0,
+      averageMonthlySales: Number(averageMonthlySales?.toFixed(2))/100 || 0,
     };
+  }
+  async getTotalMoneySalesByPaymentMethodFiado(
+    startDate?: Date,
+    endDate?: Date,
+    deliverymanId?: string,
+  ): Promise<number> {
+    const today = new Date();
+
+    if (!startDate || isNaN(startDate.getTime())) {
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    }
+
+    if (!endDate || isNaN(endDate.getTime())) {
+      endDate = today;
+    }
+    const adjustedEndDate = new Date(endDate);
+    adjustedEndDate.setUTCHours(23, 59, 59, 999);
+    const sales = await this.prismaService.sales.aggregate({
+      _sum: {
+        total: true,
+      },
+      where: {
+        paymentMethod: 'FIADO',
+        createdAt: {
+          gte: startDate,
+          lte: adjustedEndDate,
+        },
+        ...(deliverymanId && { deliverymanId }),
+      },
+    });
+
+    return sales._sum.total / 100 || 0;
   }
 }
