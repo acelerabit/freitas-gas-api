@@ -1,6 +1,7 @@
 import { Replace } from '@/helpers/Replace';
 import { TransactionType, TransactionCategory } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { User } from './user';
 
 export interface TransactionProps {
   transactionType: TransactionType;
@@ -14,6 +15,7 @@ export interface TransactionProps {
   createdAt?: Date;
   depositDate?: Date;
   bank?: string;
+  user?: User;
 }
 
 export class Transaction {
@@ -46,6 +48,14 @@ export class Transaction {
 
   set description(value: string) {
     this._props.description = value;
+  }
+
+  get user(): User {
+    return this._props.user;
+  }
+
+  set user(value: User) {
+    this._props.user = value;
   }
 
   get bank(): string {

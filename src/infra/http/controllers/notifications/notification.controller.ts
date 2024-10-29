@@ -1,10 +1,11 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { FetchAllUnreadNotifications } from 'src/application/use-cases/notifications/fetch-all-unread-notifications';
 import { ReadNotification } from 'src/application/use-cases/notifications/read-notification';
 import { Auth } from 'src/infra/decorators/auth.decorator';
 import { NotificationPresenter } from './presenters/notification.presenter';
 import { ReadAllNotifications } from '@/application/use-cases/notifications/read-all-unread-notifications';
+import { FetchAllReadedNotifications } from '@/application/use-cases/notifications/fetch-all-readed-notifications';
 
 @Controller('notifications')
 export class NotificationController {
@@ -12,13 +13,44 @@ export class NotificationController {
     private fetchAllUnreadNotifications: FetchAllUnreadNotifications,
     private readNotification: ReadNotification,
     private readAllNotifications: ReadAllNotifications,
+    private fetchAllReadedNotifications: FetchAllReadedNotifications
   ) {}
 
   @Auth(Role.ADMIN, Role.DELIVERYMAN)
   @Get('/:userId')
-  async fetchUnreads(@Param('userId') userId: string) {
+  async fetchUnreads(@Param('userId') userId: string, @Query() query: {
+    page?: string;
+    itemsPerPage?: string;
+  }) {
+    const {itemsPerPage, page} = query;
+
     const { notifications } = await this.fetchAllUnreadNotifications.execute({
       userId,
+      pagination: {
+        itemsPerPage: Number(itemsPerPage),
+        page: Number(page)
+      }
+    });
+
+    return { notifications: notifications.map(NotificationPresenter.toHTTP) };
+  }
+
+  @Auth(Role.ADMIN, Role.DELIVERYMAN)
+  @Get('/:userId/readed')
+  async fetchReaded(@Param('userId') userId: string, @Query()
+  query: {
+    page?: string;
+    itemsPerPage?: string;
+  }) {
+
+    const {itemsPerPage, page} = query;
+
+    const { notifications } = await this.fetchAllReadedNotifications.execute({
+      userId,
+      pagination: {
+        itemsPerPage: Number(itemsPerPage),
+        page: Number(page)
+      }
     });
 
     return { notifications: notifications.map(NotificationPresenter.toHTTP) };

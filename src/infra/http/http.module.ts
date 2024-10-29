@@ -87,6 +87,11 @@ import { GetExpenseProportionByCategoryUseCase } from '@/application/use-cases/t
 import { GetSalesVsExpensesComparisonUseCase } from '@/application/use-cases/transaction/get-salevsexpense-comparisom';
 import { CalculateGrossProfit } from '@/application/use-cases/transaction/get-gross-profit';
 import { DebtController } from './controllers/debt/debt.controller';
+import { FetchDepositsByDeliveryman } from '@/application/use-cases/transaction/fetch-deliveryman-deposits';
+import { FetchDeposits } from '@/application/use-cases/transaction/fetch-deposits';
+import { GetTotalMoneySalesDeliverymanToday } from '@/application/use-cases/sale/get-total-money-today-deliveryman';
+import { FetchIncomeTypesUseCase } from '@/application/use-cases/transaction/fetch-income-types';
+import { FetchAllReadedNotifications } from '@/application/use-cases/notifications/fetch-all-readed-notifications';
 
 @Module({
   controllers: [
@@ -177,6 +182,11 @@ import { DebtController } from './controllers/debt/debt.controller';
     DepositToCompanyUseCase,
     GetSalesVsExpensesComparisonUseCase,
     CalculateGrossProfit,
+    FetchDepositsByDeliveryman,
+    FetchDeposits,
+    GetTotalMoneySalesDeliverymanToday,
+    FetchIncomeTypesUseCase,
+    FetchAllReadedNotifications
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

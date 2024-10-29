@@ -4,6 +4,8 @@ import { Transaction } from '../../entities/transaction';
 import { TransactionCategory, TransactionType } from '@prisma/client';
 import { ExpenseType } from '@/application/entities/expense-type';
 import { ExpenseTypesRepository } from '@/application/repositories/expense-type-repository';
+import { IncomeType } from '@/application/entities/income-types';
+import { IncomeTypesRepository } from '@/application/repositories/income-types-repository';
 
 interface CreateTransactionRequest {
   transactionType: TransactionType;
@@ -19,6 +21,7 @@ export class CreateTransactionUseCase {
   constructor(
     private readonly transactionRepository: TransactionRepository,
     private readonly expenseTypeRepository: ExpenseTypesRepository,
+    private readonly incomeTypeRepository: IncomeTypesRepository,
   ) {}
 
   async execute({
@@ -40,11 +43,19 @@ export class CreateTransactionUseCase {
       description,
     });
 
-    const expenseType = ExpenseType.create({
-      name: customCategory,
-    });
+    if (category === 'INCOME') {
+      const incomeType = IncomeType.create({
+        name: customCategory,
+      });
 
-    await this.expenseTypeRepository.create(expenseType);
+      await this.incomeTypeRepository.create(incomeType);
+    } else {
+      const expenseType = ExpenseType.create({
+        name: customCategory,
+      });
+
+      await this.expenseTypeRepository.create(expenseType);
+    }
 
     await this.transactionRepository.createTransaction(transaction);
   }

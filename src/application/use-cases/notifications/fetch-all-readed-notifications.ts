@@ -3,24 +3,24 @@ import { Injectable } from '@nestjs/common';
 import { Notification } from 'src/application/entities/notification';
 import { NotificationRepository } from 'src/application/repositories/notification-repository';
 
-interface FetchAllUnreadNotificationsRequest {
+interface FetchAllReadedNotificationsRequest {
   userId: string;
   pagination: PaginationParams
 }
 
-interface FetchAllUnreadNotificationsResponse {
+interface FetchAllReadedNotificationsResponse {
   notifications: Notification[];
 }
 
 @Injectable()
-export class FetchAllUnreadNotifications {
+export class FetchAllReadedNotifications {
   constructor(private notificationsRepository: NotificationRepository) {}
 
   async execute({
     userId,
     pagination
-  }: FetchAllUnreadNotificationsRequest): Promise<FetchAllUnreadNotificationsResponse> {
-    const notifications = await this.notificationsRepository.fetchAllUnread(
+  }: FetchAllReadedNotificationsRequest): Promise<FetchAllReadedNotificationsResponse> {
+    const notifications = await this.notificationsRepository.fetchAllReaded(
       userId,
       pagination
     );

@@ -26,6 +26,7 @@ import { GetSalesIndicatorsUseCase } from '@/application/use-cases/sale/get-sale
 import { GetAverageSalesUseCase } from '@/application/use-cases/sale/get-average-sales';
 import { FetchSalesByDeliverymanUseCase } from '@/application/use-cases/sale/fetch-by-deliveryman';
 import { GetTotalRevenuesDeliverymanToday } from '@/application/use-cases/sale/get-total-deliveryman-revenues-today';
+import { GetTotalMoneySalesDeliverymanToday } from '@/application/use-cases/sale/get-total-money-today-deliveryman';
 
 @Controller('sales')
 export class SalesController {
@@ -40,6 +41,7 @@ export class SalesController {
     private getAverageSalesUseCase: GetAverageSalesUseCase,
     private fetchSalesByDeliverymanUseCase: FetchSalesByDeliverymanUseCase,
     private getTotalRevenuesDeliverymanToday: GetTotalRevenuesDeliverymanToday,
+    private getTotalMoneySalesDeliverymanToday: GetTotalMoneySalesDeliverymanToday,
   ) {}
 
   @Post()
@@ -234,6 +236,15 @@ export class SalesController {
     @Param('deliverymanId') deliverymanId: string,
   ): Promise<number> {
     return this.getTotalRevenuesDeliverymanToday.execute({
+      deliverymanId,
+    });
+  }
+
+  @Get('/money-sale-total-today/:deliverymanId')
+  async moneyToday(
+    @Param('deliverymanId') deliverymanId: string,
+  ): Promise<number> {
+    return this.getTotalMoneySalesDeliverymanToday.execute({
       deliverymanId,
     });
   }
