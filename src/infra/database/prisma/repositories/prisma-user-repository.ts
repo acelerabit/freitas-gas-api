@@ -9,6 +9,8 @@ import { PrismaUsersMapper } from '../mappers/user.mapper';
 export class PrismaUsersRepository implements UsersRepository {
   constructor(private prismaService: PrismaService) {}
 
+  
+
   async create(user: User): Promise<void> {
     await this.prismaService.user.create({
       data: {
@@ -53,6 +55,26 @@ export class PrismaUsersRepository implements UsersRepository {
 
   async findAllWithoutPaginate(): Promise<User[]> {
     const users = await this.prismaService.user.findMany();
+
+    return users.map(PrismaUsersMapper.toDomain);
+  }
+
+  async getAdmins(): Promise<User[]> {
+    const users = await this.prismaService.user.findMany({
+      where: {
+        role: 'ADMIN'
+      }
+    });
+
+    return users.map(PrismaUsersMapper.toDomain);
+  }
+
+  async getDeliverymans(): Promise<User[]> {
+    const users = await this.prismaService.user.findMany({
+      where: {
+        role: 'DELIVERYMAN'
+      }
+    });
 
     return users.map(PrismaUsersMapper.toDomain);
   }

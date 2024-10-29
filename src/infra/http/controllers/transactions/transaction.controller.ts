@@ -31,6 +31,10 @@ import { GetTotalExpensesDeliverymanToday } from '@/application/use-cases/transa
 import { CalculateDeliverymanBalance } from '@/application/use-cases/transaction/calculate-deliberyman-balance';
 import { DepositToCompanyUseCase } from '@/application/use-cases/transaction/deposit-to-company';
 import { DepositToCompanyBody } from './dtos/deposit-to-company-body';
+import { FetchDeposits } from '@/application/use-cases/transaction/fetch-deposits';
+import { FetchDepositsByDeliveryman } from '@/application/use-cases/transaction/fetch-deliveryman-deposits';
+import { TransactionsPresenters } from './presenters/transaction.presenter';
+import { FetchIncomeTypesUseCase } from '@/application/use-cases/transaction/fetch-income-types';
 
 @Controller('transactions')
 export class TransactionsController {
@@ -49,6 +53,9 @@ export class TransactionsController {
     private getTotalExpensesDeliverymanToday: GetTotalExpensesDeliverymanToday,
     private calculateDeliverymanBalance: CalculateDeliverymanBalance,
     private depositToCompany: DepositToCompanyUseCase,
+    private fetchDeposits: FetchDeposits,
+    private fetchDepositsByDeliveryman: FetchDepositsByDeliveryman,
+    private fetchIncomeTypesUseCase: FetchIncomeTypesUseCase,
   ) {}
 
   @Post()
@@ -139,6 +146,46 @@ export class TransactionsController {
     return transactions.map(ExpensesPresenters.toHTTP);
   }
 
+  @Get('/deposits/deliveryman/:id')
+  async FindAllDeliverymanDeposits(
+    @Param('id') id: string,
+    @Query()
+    query: {
+      page?: string;
+      itemsPerPage?: string;
+    },
+  ) {
+    const { page, itemsPerPage } = query;
+    const { transactions } = await this.fetchDepositsByDeliveryman.execute({
+      deliverymanId: id,
+      pagination: {
+        itemsPerPage: Number(itemsPerPage),
+        page: Number(page),
+      },
+    });
+
+    return transactions.map(ExpensesPresenters.toHTTP);
+  }
+
+  @Get('/deposits')
+  async FindAllDeposits(
+    @Query()
+    query: {
+      page?: string;
+      itemsPerPage?: string;
+    },
+  ) {
+    const { page, itemsPerPage } = query;
+    const { transactions } = await this.fetchDeposits.execute({
+      pagination: {
+        itemsPerPage: Number(itemsPerPage),
+        page: Number(page),
+      },
+    });
+
+    return transactions.map(TransactionsPresenters.toHTTP);
+  }
+
   @Get('/balance')
   async balance(): Promise<number> {
     const { finalBalance } = await this.calculateCompanyBalance.execute();
@@ -216,6 +263,18 @@ export class TransactionsController {
       return {
         id: expenseType.id,
         name: expenseType.name,
+      };
+    });
+  }
+
+  @Get('/income/types')
+  async fetchIncomeTypes() {
+    const { incomeTypes } = await this.fetchIncomeTypesUseCase.execute();
+
+    return incomeTypes.map((incomeType) => {
+      return {
+        id: incomeType.id,
+        name: incomeType.name,
       };
     });
   }

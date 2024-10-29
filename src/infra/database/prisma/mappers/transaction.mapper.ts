@@ -1,5 +1,6 @@
 import { Transaction } from 'src/application/entities/transaction';
 import { Prisma } from '@prisma/client';
+import { User } from '@/application/entities/user';
 
 export class PrismaTransactionsMapper {
   static toDomain(transaction: any) {
@@ -15,6 +16,13 @@ export class PrismaTransactionsMapper {
         description: transaction.description,
         depositDate: transaction.depositDate,
         bank: transaction.bank,
+        user: transaction.user
+          ? User.create({
+              email: transaction.user.email,
+              name: transaction.user.name,
+              role: transaction.user.role,
+            })
+          : null,
       },
       transaction.id,
     );

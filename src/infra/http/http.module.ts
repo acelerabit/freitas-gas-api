@@ -84,6 +84,11 @@ import { FetchDeliverymans } from '@/application/use-cases/user/fetch-deliveryma
 import { GetAverageSalesUseCase } from '@/application/use-cases/sale/get-average-sales';
 import { GetExpenseIndicators } from '@/application/use-cases/transaction/get-expense-indicators';
 import { GetExpenseProportionByCategoryUseCase } from '@/application/use-cases/transaction/get-expense-proportion-by-category';
+import { FetchDepositsByDeliveryman } from '@/application/use-cases/transaction/fetch-deliveryman-deposits';
+import { FetchDeposits } from '@/application/use-cases/transaction/fetch-deposits';
+import { GetTotalMoneySalesDeliverymanToday } from '@/application/use-cases/sale/get-total-money-today-deliveryman';
+import { FetchIncomeTypesUseCase } from '@/application/use-cases/transaction/fetch-income-types';
+import { FetchAllReadedNotifications } from '@/application/use-cases/notifications/fetch-all-readed-notifications';
 
 @Module({
   controllers: [
@@ -171,6 +176,11 @@ import { GetExpenseProportionByCategoryUseCase } from '@/application/use-cases/t
     GetTotalRevenuesDeliverymanToday,
     CalculateDeliverymanBalance,
     DepositToCompanyUseCase,
+    FetchDepositsByDeliveryman,
+    FetchDeposits,
+    GetTotalMoneySalesDeliverymanToday,
+    FetchIncomeTypesUseCase,
+    FetchAllReadedNotifications
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

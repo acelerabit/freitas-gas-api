@@ -22,6 +22,8 @@ import { SuppliersRepository } from '@/application/repositories/supplier-reposit
 import { PrismaSuppliersRepository } from './prisma/repositories/prisma-suppliers.repository';
 import { ExpenseTypesRepository } from '@/application/repositories/expense-type-repository';
 import { PrismaExpenseTypesRepository } from './prisma/repositories/prisma-expense-type-repository';
+import { PrismaIncomeTypesRepository } from './prisma/repositories/prisma-income-type-repository';
+import { IncomeTypesRepository } from '@/application/repositories/income-types-repository';
 
 @Module({
   providers: [
@@ -64,6 +66,10 @@ import { PrismaExpenseTypesRepository } from './prisma/repositories/prisma-expen
     {
       provide: ExpenseTypesRepository,
       useClass: PrismaExpenseTypesRepository,
+    },
+    {
+      provide: IncomeTypesRepository,
+      useClass: PrismaIncomeTypesRepository,
     },
     {
       provide: PrismaService,
@@ -113,6 +119,10 @@ import { PrismaExpenseTypesRepository } from './prisma/repositories/prisma-expen
     {
       provide: ExpenseTypesRepository,
       useClass: PrismaExpenseTypesRepository,
+    },
+    {
+      provide: IncomeTypesRepository,
+      useClass: PrismaIncomeTypesRepository,
     },
     {
       provide: PrismaService,

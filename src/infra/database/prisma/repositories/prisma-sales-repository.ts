@@ -12,6 +12,7 @@ import { DateService } from '@/infra/dates/date.service';
 
 @Injectable()
 export class PrismaSalesRepository extends SalesRepository {
+
   constructor(
     private prismaService: PrismaService,
     private dateService: DateService,
@@ -433,6 +434,72 @@ export class PrismaSalesRepository extends SalesRepository {
     return total._sum.amount || 0;
   }
 
+  async getTotalMoneySalesByDeliveryman(
+    deliverymanId: string,
+  ): Promise<number> {
+    const { startOfDay, endOfDay } =
+      await this.dateService.startAndEndOfTheDay();
+    const total = await this.prismaService.transaction.aggregate({
+      _sum: {
+        amount: true,
+      },
+      where: {
+        sales: {
+          some: {
+            AND: [
+              {
+                transaction: {
+                  userId: deliverymanId,
+                },
+              },
+              {
+                paymentMethod: 'DINHEIRO',
+              },
+            ],
+          },
+        },
+        createdAt: {
+          gte: startOfDay,
+          lt: endOfDay,
+        },
+      },
+    });
+
+    return total._sum.amount || 0;
+  }
+
+  async getTotalMoneySalesByDeliverymanYesterday(deliverymanId: string): Promise<number> {
+    const { startOfYesterday, endOfYesterday } =
+      await this.dateService.startAndEndOfYesterday();
+      const total = await this.prismaService.transaction.aggregate({
+        _sum: {
+            amount: true,
+        },
+        where: {
+            sales: {
+                some: {
+                    AND: [
+                        {
+                            transaction: {
+                                userId: deliverymanId,
+                            },
+                        },
+                        {
+                            paymentMethod: 'DINHEIRO',
+                        },
+                    ],
+                },
+            },
+            createdAt: {
+                gte: startOfYesterday,
+                lt: endOfYesterday,
+            },
+        },
+    });
+
+    return total._sum.amount || 0;
+  }
+
   async findComodatoByCustomer(customerId: string): Promise<number> {
     const raw = await this.prismaService.sales.findMany({
       where: {
@@ -556,14 +623,14 @@ export class PrismaSalesRepository extends SalesRepository {
       },
       ...(deliverymanId ? { transaction: { userId: deliverymanId } } : {}),
     };
-  
+
     const totalSales = await this.prismaService.sales.aggregate({
       _sum: {
         total: true,
       },
       where: whereFilter,
     });
-  
+
     const salesPerDay = await this.prismaService.sales.findMany({
       where: whereFilter,
       select: {
@@ -571,20 +638,20 @@ export class PrismaSalesRepository extends SalesRepository {
         total: true,
       },
     });
-  
+
     const totalPerDay = salesPerDay.reduce((acc, sale) => {
       const date = sale.createdAt.toISOString().split('T')[0];
-      
+
       if (!acc[date]) {
         acc[date] = { createdAt: sale.createdAt, total: 0 };
       }
-      
+
       acc[date].total += Number(sale.total);
       return acc;
     }, {} as Record<string, { createdAt: Date; total: number }>);
-  
+
     const formattedTotalPerDay = Object.values(totalPerDay);
-  
+
     const salesPerMonth = await this.prismaService.sales.groupBy({
       by: ['createdAt'],
       where: whereFilter,
@@ -592,8 +659,8 @@ export class PrismaSalesRepository extends SalesRepository {
         total: true,
       },
     });
-  
-    const totalPerMonth = salesPerMonth.map(sale => {
+
+    const totalPerMonth = salesPerMonth.map((sale) => {
       const date = new Date(sale.createdAt);
       return {
         year: date.getFullYear(),
@@ -601,7 +668,7 @@ export class PrismaSalesRepository extends SalesRepository {
         total: Number(sale._sum.total),
       };
     });
-  
+
     return {
       totalSales: Number(totalSales._sum.total || 0),
       totalPerDay: formattedTotalPerDay,

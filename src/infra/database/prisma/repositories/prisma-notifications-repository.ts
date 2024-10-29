@@ -3,6 +3,7 @@ import { Notification } from 'src/application/entities/notification';
 import { NotificationRepository } from 'src/application/repositories/notification-repository';
 import { PrismaNotificationsMapper } from '../mappers/notifications.mapper';
 import { PrismaService } from '../prisma.service';
+import { PaginationParams } from '@/@shared/pagination-interface';
 
 @Injectable()
 export class PrismaNotificationsRepository implements NotificationRepository {
@@ -40,12 +41,34 @@ export class PrismaNotificationsRepository implements NotificationRepository {
     return notifications.map(PrismaNotificationsMapper.toDomain);
   }
 
-  async fetchAllUnread(userId: string): Promise<Notification[]> {
+  async fetchAllUnread(userId: string, pagination: PaginationParams): Promise<Notification[]> {
     const notifications = await this.prismaService.notification.findMany({
       where: {
         userId,
         read: false,
       },
+      take: pagination.itemsPerPage,
+      skip: (pagination.page - 1) * pagination.itemsPerPage,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    if (!notifications) {
+      return null;
+    }
+
+    return notifications.map(PrismaNotificationsMapper.toDomain);
+  }
+
+  async fetchAllReaded(userId: string, pagination: PaginationParams): Promise<Notification[]> {
+    const notifications = await this.prismaService.notification.findMany({
+      where: {
+        userId,
+        read: true,
+      },
+      take: pagination.itemsPerPage,
+      skip: (pagination.page - 1) * pagination.itemsPerPage,
       orderBy: {
         createdAt: 'desc',
       },

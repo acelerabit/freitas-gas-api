@@ -12,6 +12,7 @@ import { DateService } from '@/infra/dates/date.service';
 
 @Injectable()
 export class PrismaTransactionRepository extends TransactionRepository {
+
   constructor(
     private prismaService: PrismaService,
     private dateService: DateService,
@@ -84,12 +85,15 @@ export class PrismaTransactionRepository extends TransactionRepository {
             {
               customCategory: type
                 ? {
-                    contains: type,
-                    mode: 'insensitive',
-                  }
+                  contains: type,
+                  mode: 'insensitive',
+                }
                 : {},
             },
           ],
+          category: {
+            not: 'DEPOSIT',
+          },
           ...whereFilter,
         },
         orderBy: orderBy,
@@ -104,21 +108,15 @@ export class PrismaTransactionRepository extends TransactionRepository {
         ? { skip: (pagination.page - 1) * pagination.itemsPerPage }
         : {}),
       where: {
+        category: {
+          not: 'DEPOSIT',
+        },
         ...whereFilter,
       },
       orderBy: orderBy,
     });
 
     return raw.map(PrismaTransactionsMapper.toDomain);
-
-    // const transactions = await this.prismaService.transaction.findMany({
-    //   take: Number(pagination.itemsPerPage),
-    //   skip: (pagination.page - 1) * Number(pagination.itemsPerPage),
-    //   orderBy: {
-    //     createdAt: 'desc',
-    //   },
-    // });
-    // return transactions.map(PrismaTransactionsMapper.toDomain);
   }
 
   async findAllWithoutPaginate(): Promise<Transaction[]> {
@@ -137,6 +135,75 @@ export class PrismaTransactionRepository extends TransactionRepository {
         createdAt: 'desc',
       },
     });
+    return transactions.map(PrismaTransactionsMapper.toDomain);
+  }
+
+  async findAllDepositsByDeliveryman(
+    deliverymanId: string,
+    pagination: PaginationParams,
+  ): Promise<Transaction[]> {
+    const transactions = await this.prismaService.transaction.findMany({
+      where: {
+        AND: [
+          {
+            category: 'DEPOSIT',
+          },
+          {
+            userId: deliverymanId,
+          },
+        ],
+      },
+      take: Number(pagination.itemsPerPage),
+      skip: (pagination.page - 1) * Number(pagination.itemsPerPage),
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    return transactions.map(PrismaTransactionsMapper.toDomain);
+  }
+
+  async findAllDepositsByDeliverymanYesterday(deliverymanId: string): Promise<Transaction[]> {
+    const { startOfYesterday, endOfYesterday } =
+      await this.dateService.startAndEndOfYesterday();
+
+    const transactions = await this.prismaService.transaction.findMany({
+      where: {
+        AND: [
+          {
+            category: 'DEPOSIT',
+          },
+          {
+            userId: deliverymanId,
+          },
+        ],
+        createdAt: {
+          gte: startOfYesterday,
+          lt: endOfYesterday,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    
+    return transactions.map(PrismaTransactionsMapper.toDomain);
+  }
+
+  async findAllDeposits(pagination: PaginationParams): Promise<Transaction[]> {
+    const transactions = await this.prismaService.transaction.findMany({
+      where: {
+        category: 'DEPOSIT',
+      },
+      take: Number(pagination.itemsPerPage),
+      skip: (pagination.page - 1) * Number(pagination.itemsPerPage),
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        user: true,
+      },
+    });
+
     return transactions.map(PrismaTransactionsMapper.toDomain);
   }
 
@@ -231,7 +298,9 @@ export class PrismaTransactionRepository extends TransactionRepository {
         sales: {
           some: {
             paymentMethod: {
-              not: 'DINHEIRO',
+              not: {
+                in: ['DINHEIRO', 'FIADO'],
+              }
             },
           },
         },
