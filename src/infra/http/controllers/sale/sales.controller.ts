@@ -159,6 +159,7 @@ export class SalesController {
     await this.deleteSaleUseCase.execute(saleId);
   }
 
+  @Auth(Role.ADMIN)
   @Get('/indicators')
   async getSalesIndicators(
     @Query()
@@ -185,6 +186,7 @@ export class SalesController {
     return indicators;
   }
 
+  @Auth(Role.ADMIN)
   @Get('/average-sales')
   async getAverageSales(
     @Query()
@@ -251,6 +253,7 @@ export class SalesController {
     });
   }
 
+  @Auth(Role.ADMIN)
   @Get('total-fiado')
   async getTotalFiado(
     @Query('startDate') startDate: string,

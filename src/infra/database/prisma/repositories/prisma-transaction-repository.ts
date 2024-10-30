@@ -655,7 +655,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
     const formattedExpensesTotal = parseFloat((expensesTotal / 100).toFixed(2));
 
     const grossProfit = formattedSalesTotal - formattedExpensesTotal;
-    const formattedGrossProfit = grossProfit >= 0 ? parseFloat(grossProfit.toFixed(2)) : 0;
+    const formattedGrossProfit = parseFloat(grossProfit.toFixed(2));
 
     return formattedGrossProfit;
   }

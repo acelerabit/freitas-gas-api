@@ -284,6 +284,7 @@ export class TransactionsController {
     });
   }
 
+  @Auth(Role.ADMIN)
   @Get('/expenses/indicators')
   async getIndicators(
     @Query('startDate') startDate: string,
@@ -297,6 +298,8 @@ export class TransactionsController {
     );
     return result;
   }
+
+  @Auth(Role.ADMIN)
   @Get('/expenses/proportion-by-category')
   async getExpenseProportionByCategory(
     @Query('startDate') startDate?: string,
@@ -315,6 +318,8 @@ export class TransactionsController {
 
     return expenseProportions;
   }
+
+  @Auth(Role.ADMIN)
   @Get('/expenses/sales-vs-expenses')
   async getSalesVsExpensesComparison(
     @Query('startDate') startDate?: string,
@@ -332,6 +337,8 @@ export class TransactionsController {
 
     return result;
   }
+
+  @Auth(Role.ADMIN)
   @Get('gross-profit')
   async getGrossProfit(
     @Query('startDate') startDate?: string,
