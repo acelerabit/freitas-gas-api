@@ -24,6 +24,10 @@ import { ExpenseTypesRepository } from '@/application/repositories/expense-type-
 import { PrismaExpenseTypesRepository } from './prisma/repositories/prisma-expense-type-repository';
 import { PrismaIncomeTypesRepository } from './prisma/repositories/prisma-income-type-repository';
 import { IncomeTypesRepository } from '@/application/repositories/income-types-repository';
+import { CustomerWithComodatosRepository } from '@/application/repositories/customer-with-comodato-repository';
+import { PrismaCustomerWithComodatosRepository } from './prisma/repositories/prisma-customer-with-comodato';
+import { CollectsRepository } from '@/application/repositories/collect-repository';
+import { PrismaCollectsRepository } from './prisma/repositories/prisma-collect-repository';
 
 @Module({
   providers: [
@@ -70,6 +74,15 @@ import { IncomeTypesRepository } from '@/application/repositories/income-types-r
     {
       provide: IncomeTypesRepository,
       useClass: PrismaIncomeTypesRepository,
+    },
+    {
+      provide: CustomerWithComodatosRepository,
+      useClass: PrismaCustomerWithComodatosRepository,
+    },
+    {
+
+      provide: CollectsRepository,
+      useClass: PrismaCollectsRepository,
     },
     {
       provide: PrismaService,
@@ -125,6 +138,16 @@ import { IncomeTypesRepository } from '@/application/repositories/income-types-r
       useClass: PrismaIncomeTypesRepository,
     },
     {
+
+      provide: CustomerWithComodatosRepository,
+      useClass: PrismaCustomerWithComodatosRepository,
+    },
+    {
+
+      provide: CollectsRepository,
+      useClass: PrismaCollectsRepository,
+    },
+    {
       provide: PrismaService,
       useFactory: () => {
         return prismaExtensionFactory(new PrismaService());
@@ -132,4 +155,4 @@ import { IncomeTypesRepository } from '@/application/repositories/income-types-r
     },
   ],
 })
-export class DatabaseModule {}
+export class DatabaseModule { }

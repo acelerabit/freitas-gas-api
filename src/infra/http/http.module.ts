@@ -93,6 +93,9 @@ import { GetTotalMoneySalesDeliverymanToday } from '@/application/use-cases/sale
 import { FetchIncomeTypesUseCase } from '@/application/use-cases/transaction/fetch-income-types';
 import { FetchAllReadedNotifications } from '@/application/use-cases/notifications/fetch-all-readed-notifications';
 import { GetTotalMoneySalesByPaymentMethodFiado } from '@/application/use-cases/sale/get-total-sales-fiado';
+import { CollectController } from './controllers/collect/collect.controller';
+import { CollectComodatoUseCase } from '@/application/use-cases/collect/collect-comodato';
+import { FetchAllCollects } from '@/application/use-cases/collect/fetch-collects';
 
 @Module({
   controllers: [
@@ -109,6 +112,7 @@ import { GetTotalMoneySalesByPaymentMethodFiado } from '@/application/use-cases/
     TransactionsController,
     SupplierController,
     DebtController,
+    CollectController
   ],
   providers: [
     CreateUser,
@@ -188,8 +192,10 @@ import { GetTotalMoneySalesByPaymentMethodFiado } from '@/application/use-cases/
     GetTotalMoneySalesDeliverymanToday,
     FetchIncomeTypesUseCase,
     FetchAllReadedNotifications,
-    GetTotalMoneySalesByPaymentMethodFiado
+    GetTotalMoneySalesByPaymentMethodFiado,
+    CollectComodatoUseCase,
+    FetchAllCollects
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })
-export class HttpModule {}
+export class HttpModule { }
