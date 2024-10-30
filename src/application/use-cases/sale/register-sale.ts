@@ -9,6 +9,8 @@ import { BottleStatus } from '@prisma/client';
 import { UsersRepository } from '@/application/repositories/user-repository';
 import { ProductRepository } from '@/application/repositories/product-repository';
 import { Product } from '@/application/entities/product';
+import { CustomerWithComodatosRepository } from '@/application/repositories/customer-with-comodato-repository';
+import { CustomerWithComodato } from '@/application/entities/customers-with-comodato';
 
 @Injectable()
 export class RegisterSaleUseCase {
@@ -18,7 +20,8 @@ export class RegisterSaleUseCase {
     private readonly customerRepository: CustomersRepository,
     private readonly usersRepository: UsersRepository,
     private productRepository: ProductRepository,
-  ) {}
+    private customerWithComodatoRepository: CustomerWithComodatosRepository
+  ) { }
 
   async execute(sale: Sale): Promise<void> {
     const customer = await this.customerRepository.findById(sale.customerId);
@@ -126,6 +129,34 @@ export class RegisterSaleUseCase {
     if (saleWithCustomerId.isComodato()) {
       this.generateComodatoTerm(saleWithCustomerId);
     }
+
+    const hasComodato = saleWithCustomerId.products
+      .some(product => product.status === 'COMODATO')
+
+    if (hasComodato) {
+      const comodatoQuantity = saleWithCustomerId.products
+        .filter(product => product.status === 'COMODATO')
+        .reduce((acc, product) => acc + product.quantity, 0);
+
+      const clientHasComodato = await this.customerWithComodatoRepository.findByCustomer(customer.id)
+
+      if (!clientHasComodato) {
+        const customerWithComodato = CustomerWithComodato.create({
+          customerId: customer.id,
+          quantity: comodatoQuantity
+        })
+
+        await this.customerWithComodatoRepository.create(customerWithComodato)
+
+      } else {
+        clientHasComodato.quantity += comodatoQuantity
+
+        await this.customerWithComodatoRepository.update(clientHasComodato)
+      }
+
+    }
+
+
   }
 
   private generateComodatoTerm(sale: Sale): void {

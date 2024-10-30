@@ -131,9 +131,33 @@ model Customer {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  sales Sales[]
+  sales                Sales[]
+  customerWithComodato CustomerWithComodato?
+  collects             Collect[]
 
   @@map("customers")
+}
+
+model CustomerWithComodato {
+  id String @id @default(uuid())
+
+  quantity Int @default(0)
+
+  customer   Customer? @relation(fields: [customerId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  customerId String?   @unique @map("customer_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model Collect {
+  id String @id @default(uuid())
+
+  quantity Int @default(0)
+
+  customer   Customer @relation(fields: [customerId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  customerId String   @map("customer_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
 }
 
 model Sales {
