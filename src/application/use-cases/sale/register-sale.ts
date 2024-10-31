@@ -20,23 +20,17 @@ export class RegisterSaleUseCase {
     private readonly customerRepository: CustomersRepository,
     private readonly usersRepository: UsersRepository,
     private productRepository: ProductRepository,
-    private customerWithComodatoRepository: CustomerWithComodatosRepository
-  ) { }
+    private customerWithComodatoRepository: CustomerWithComodatosRepository,
+  ) {}
 
   async execute(sale: Sale): Promise<void> {
     const customer = await this.customerRepository.findById(sale.customerId);
 
-    if(!customer) {
-      throw new BadRequestException(
-        'Cliente não encontrado',
-        {
-          cause: new Error(
-            'Cliente não encontrado',
-          ),
-          description:
-            'Cliente não encontrado',
-        },
-      );
+    if (!customer) {
+      throw new BadRequestException('Cliente não encontrado', {
+        cause: new Error('Cliente não encontrado'),
+        description: 'Cliente não encontrado',
+      });
     }
 
     const isComodato = sale.products.some(
@@ -144,36 +138,51 @@ export class RegisterSaleUseCase {
       this.generateComodatoTerm(saleWithCustomerId);
     }
 
-    const hasComodato = saleWithCustomerId.products
-      .some(product => product.status === 'COMODATO')
+    const hasComodato = saleWithCustomerId.products.some(
+      (product) => product.status === 'COMODATO',
+    );
 
     if (hasComodato) {
       const comodatoQuantity = saleWithCustomerId.products
-        .filter(product => product.status === 'COMODATO')
+        .filter((product) => product.status === 'COMODATO')
         .reduce((acc, product) => acc + product.quantity, 0);
 
-      const clientHasComodato = await this.customerWithComodatoRepository.findByCustomer(customer.id)
+      const comodatoProducts = saleWithCustomerId.products.filter(
+        (product) => product.status === 'COMODATO',
+      );
+
+      const clientHasComodato =
+        await this.customerWithComodatoRepository.findByCustomer(customer.id);
 
       if (!clientHasComodato) {
         const customerWithComodato = CustomerWithComodato.create({
           customerId: customer.id,
-          quantity: comodatoQuantity
-        })
+          quantity: comodatoQuantity,
+        });
 
-        await this.customerWithComodatoRepository.create(customerWithComodato)
+        await this.customerWithComodatoRepository.create(customerWithComodato);
 
+        await this.customerWithComodatoRepository.saveProducts(
+          comodatoProducts,
+          customerWithComodato.id,
+        );
       } else {
-        clientHasComodato.quantity += comodatoQuantity
+        clientHasComodato.quantity += comodatoQuantity;
 
-        await this.customerWithComodatoRepository.update(clientHasComodato)
+        // se ele ja tem atualizar a quantidade, se não criar o prosuctComodato
+        await this.customerWithComodatoRepository.updateProducts(
+          comodatoProducts,
+          clientHasComodato.id,
+        );
+
+        await this.customerWithComodatoRepository.update(clientHasComodato);
       }
-
     }
-
-
   }
 
   private generateComodatoTerm(sale: Sale): void {
     console.log(`Gerar termo de comodato para o cliente ${sale.customerId}`);
   }
+
+  private saveComodatos(products: Product[]) {}
 }

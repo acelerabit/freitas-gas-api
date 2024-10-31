@@ -97,6 +97,7 @@ import { CollectController } from './controllers/collect/collect.controller';
 import { CollectComodatoUseCase } from '@/application/use-cases/collect/collect-comodato';
 import { FetchAllCollects } from '@/application/use-cases/collect/fetch-collects';
 import { GetCustomersWithPositiveFiadoDebts } from '@/application/use-cases/sale/get-customer-with-sale-fiado';
+import { GetQuantityByCustomer } from '@/application/use-cases/collect/get-quantity-customer';
 
 @Module({
   controllers: [
@@ -113,7 +114,7 @@ import { GetCustomersWithPositiveFiadoDebts } from '@/application/use-cases/sale
     TransactionsController,
     SupplierController,
     DebtController,
-    CollectController
+    CollectController,
   ],
   providers: [
     CreateUser,
@@ -196,8 +197,9 @@ import { GetCustomersWithPositiveFiadoDebts } from '@/application/use-cases/sale
     GetTotalMoneySalesByPaymentMethodFiado,
     CollectComodatoUseCase,
     FetchAllCollects,
-    GetCustomersWithPositiveFiadoDebts
+    GetCustomersWithPositiveFiadoDebts,
+    GetQuantityByCustomer,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })
-export class HttpModule { }
+export class HttpModule {}

@@ -24,13 +24,13 @@ export class CollectComodatoUseCase {
     private customerRepository: CustomersRepository,
     private customerWithComodatoRepository: CustomerWithComodatosRepository,
     private productRepository: ProductRepository,
-    private collectRepository: CollectsRepository
+    private collectRepository: CollectsRepository,
   ) {}
 
   async execute({
     quantity,
     customerId,
-    productId
+    productId,
   }: CollectComodatoUseCaseProps): Promise<void> {
     const customer = await this.customerRepository.findById(customerId);
 
@@ -44,16 +44,33 @@ export class CollectComodatoUseCase {
     const customerWithComodato =
       await this.customerWithComodatoRepository.findByCustomer(customerId);
 
-
- 
     if (!customerWithComodato) {
-      throw new BadRequestException('Cliente não tem itens suficientes em comodato', {
-        cause: new Error('Cliente não tem itens em comodato'),
-        description: 'Cliente não tem itens em comodato',
-      });
+      throw new BadRequestException(
+        'Cliente não tem itens suficientes em comodato',
+        {
+          cause: new Error('Cliente não tem itens em comodato'),
+          description: 'Cliente não tem itens em comodato',
+        },
+      );
     }
 
-    if (customerWithComodato.quantity < quantity) {
+    const comodatoQuantity =
+      await this.customerWithComodatoRepository.findByCustomerAndProduct(
+        customerId,
+        productId,
+      );
+
+    if (!comodatoQuantity) {
+      throw new BadRequestException(
+        'Cliente não tem itens desse tipo suficientes em comodato',
+        {
+          cause: new Error('Cliente não tem itens desse tipo em comodato'),
+          description: 'Cliente não tem itens desse tipo em comodato',
+        },
+      );
+    }
+
+    if (comodatoQuantity < quantity) {
       throw new BadRequestException(
         'Cliente tem menos itens em comodado do que o solicitado para coleta',
         {
@@ -66,30 +83,33 @@ export class CollectComodatoUseCase {
       );
     }
 
-    
-
     const product = await this.productRepository.findById(productId);
 
     if (!product) {
       throw new NotFoundException('Produto não encontrado');
     }
 
-    customerWithComodato.quantity -= quantity
+    customerWithComodato.quantity -= quantity;
 
-    await this.customerWithComodatoRepository.update(customerWithComodato)
+    await this.customerWithComodatoRepository.update(customerWithComodato);
 
     product.quantity += quantity;
 
     await this.productRepository.updateProduct(product);
 
-
     const collect = Collect.create({
       customerId: customer.id,
       quantity: quantity,
-    })
+    });
 
-    await this.collectRepository.create(collect)
+    await this.collectRepository.create(collect);
 
-    return
+    await this.customerWithComodatoRepository.saveCollectProducts(
+      productId,
+      quantity,
+      customerWithComodato.id,
+    );
+
+    return;
   }
 }

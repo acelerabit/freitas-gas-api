@@ -1,26 +1,31 @@
 import { CustomerWithComodato } from '@/application/entities/customers-with-comodato';
 import { Prisma } from '@prisma/client';
+import { PrismaProductComodatosMapper } from './product-comodato.mapper';
 
 export class PrismaCustomerWithComodatosMapper {
-  static toDomain(customerwithcomodato: any): CustomerWithComodato {
+  static toDomain(customerWithComodato: any): CustomerWithComodato {
     return CustomerWithComodato.create(
       {
-        customerId: customerwithcomodato.customerId,
-        quantity: customerwithcomodato.quantity,
-
-        createdAt: customerwithcomodato.createdAt,
-        user: customerwithcomodato.customer ?? null,
+        customerId: customerWithComodato.customerId,
+        quantity: customerWithComodato.quantity,
+        products: customerWithComodato.products.map(
+          PrismaProductComodatosMapper.toDomain,
+        ),
+        createdAt: customerWithComodato.createdAt,
+        user: customerWithComodato.customer ?? null,
       },
-      customerwithcomodato.id,
+      customerWithComodato.id,
     );
   }
 
-  static toPrisma(customerwithcomodato: CustomerWithComodato): Prisma.CustomerWithComodatoUncheckedCreateInput {
+  static toPrisma(
+    customerWithComodato: CustomerWithComodato,
+  ): Prisma.CustomerWithComodatoUncheckedCreateInput {
     return {
-      id: customerwithcomodato.id,
-      customerId: customerwithcomodato.customerId,
-      quantity: customerwithcomodato.quantity,
-      createdAt: customerwithcomodato.createdAt,
+      id: customerWithComodato.id,
+      customerId: customerWithComodato.customerId,
+      quantity: customerWithComodato.quantity,
+      createdAt: customerWithComodato.createdAt,
     };
   }
 }

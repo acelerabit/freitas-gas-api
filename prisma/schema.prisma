@@ -112,7 +112,8 @@ model Product {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  sales SalesProduct[]
+  sales            SalesProduct[]
+  productsComodato ProductComodato[]
 
   @@map("products")
 }
@@ -145,6 +146,22 @@ model CustomerWithComodato {
 
   customer   Customer? @relation(fields: [customerId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   customerId String?   @unique @map("customer_id")
+
+  products ProductComodato[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model ProductComodato {
+  id String @id @default(uuid())
+
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+
+  quantity Int
+
+  customerWithComodato   CustomerWithComodato? @relation(fields: [customerWithComodatoId], references: [id])
+  customerWithComodatoId String?               @map("customer_with_comodato_id")
 
   createdAt DateTime @default(now()) @map("created_at")
 }
