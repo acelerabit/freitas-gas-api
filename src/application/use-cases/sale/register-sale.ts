@@ -25,6 +25,20 @@ export class RegisterSaleUseCase {
 
   async execute(sale: Sale): Promise<void> {
     const customer = await this.customerRepository.findById(sale.customerId);
+
+    if(!customer) {
+      throw new BadRequestException(
+        'Cliente não encontrado',
+        {
+          cause: new Error(
+            'Cliente não encontrado',
+          ),
+          description:
+            'Cliente não encontrado',
+        },
+      );
+    }
+
     const isComodato = sale.products.some(
       (product) => product.status === BottleStatus.COMODATO,
     );

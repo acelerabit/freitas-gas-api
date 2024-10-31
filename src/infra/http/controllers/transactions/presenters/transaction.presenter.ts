@@ -10,6 +10,7 @@ export class TransactionsPresenters {
       amount: transaction.amount,
       description: transaction.description,
       createdAt: transaction.createdAt,
+      bank: transaction.bank,
       user: transaction.user
         ? {
             id: transaction.user.id,

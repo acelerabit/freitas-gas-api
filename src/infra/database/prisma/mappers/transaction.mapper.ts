@@ -15,6 +15,7 @@ export class PrismaTransactionsMapper {
         referenceId: transaction.referenceId,
         description: transaction.description,
         depositDate: transaction.depositDate,
+        createdAt: transaction.createdAt,
         bank: transaction.bank,
         user: transaction.user
           ? User.create({
@@ -43,6 +44,8 @@ export class PrismaTransactionsMapper {
       description: transaction.description,
       depositDate: transaction.depositDate,
       bank: transaction.bank,
+      createdAt: transaction.createdAt,
+
     };
   }
 }
