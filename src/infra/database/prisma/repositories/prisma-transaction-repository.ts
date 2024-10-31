@@ -547,51 +547,63 @@ export class PrismaTransactionRepository extends TransactionRepository {
   }> {
     const adjustedEndDate = new Date(endDate);
     adjustedEndDate.setUTCHours(23, 59, 59, 999);
-    const totalSales = await this.prismaService.transaction.findMany({
-      where: {
-        category: TransactionCategory.SALE,
-        createdAt: {
-          gte: startDate,
-          lte: adjustedEndDate,
-        },
-        ...(deliverymanId && { userId: deliverymanId }),
+  
+    const salesFilter = {
+      createdAt: {
+        gte: startDate,
+        lte: adjustedEndDate,
       },
+      ...(deliverymanId && { userId: deliverymanId }),
+    };
+
+    const totalSalesAggregate = await this.prismaService.sales.aggregate({
+      _sum: {
+        total: true,
+      },
+      where: salesFilter,
+    });
+
+    const salesTransactions = await this.prismaService.sales.findMany({
+      where: salesFilter,
       select: {
         createdAt: true,
-        amount: true,
+        total: true,
       },
     });
-    const salesByMonth = totalSales.reduce((acc, transaction) => {
-      const year = transaction.createdAt.getFullYear();
-      const month = transaction.createdAt.getMonth() + 1;
+  
+    const salesByMonth = salesTransactions.reduce((acc, sale) => {
+      const year = sale.createdAt.getFullYear();
+      const month = sale.createdAt.getMonth() + 1;
       const key = `${year}-${month}`;
-
+  
       if (!acc[key]) {
         acc[key] = { year, month, total: 0 };
       }
   
-      acc[key].total += transaction.amount/100 || 0;
+      acc[key].total += sale.total / 100 || 0;
       return acc;
     }, {} as Record<string, { year: number; month: number; total: number }>);
   
     const totalSalesByMonth = Object.values(salesByMonth);
-
-    const totalExpenses = await this.prismaService.transaction.findMany({
-      where: {
-        category: TransactionCategory.EXPENSE,
-        createdAt: {
-          gte: startDate,
-          lte: adjustedEndDate,
-        },
-        ...(deliverymanId && { userId: deliverymanId }),
+  
+    const expenseFilter = {
+      category: TransactionCategory.EXPENSE,
+      createdAt: {
+        gte: startDate,
+        lte: adjustedEndDate,
       },
+      ...(deliverymanId && { userId: deliverymanId }),
+    };
+  
+    const expenseTransactions = await this.prismaService.transaction.findMany({
+      where: expenseFilter,
       select: {
         createdAt: true,
         amount: true,
       },
     });
-
-    const expensesByMonth = totalExpenses.reduce((acc, transaction) => {
+  
+    const expensesByMonth = expenseTransactions.reduce((acc, transaction) => {
       const year = transaction.createdAt.getFullYear();
       const month = transaction.createdAt.getMonth() + 1;
       const key = `${year}-${month}`;
@@ -599,7 +611,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
       if (!acc[key]) {
         acc[key] = { year, month, total: 0 };
       }
-      acc[key].total += transaction.amount/100 || 0;
+      acc[key].total += transaction.amount / 100 || 0;
   
       return acc;
     }, {} as Record<string, { year: number; month: number; total: number }>);
@@ -611,6 +623,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
       totalExpenses: totalExpensesByMonth,
     };
   }
+  
   async getGrossProfit(
     startDate?: Date,
     endDate?: Date,

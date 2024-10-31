@@ -28,6 +28,7 @@ import { FetchSalesByDeliverymanUseCase } from '@/application/use-cases/sale/fet
 import { GetTotalRevenuesDeliverymanToday } from '@/application/use-cases/sale/get-total-deliveryman-revenues-today';
 import { GetTotalMoneySalesDeliverymanToday } from '@/application/use-cases/sale/get-total-money-today-deliveryman';
 import { GetTotalMoneySalesByPaymentMethodFiado } from '@/application/use-cases/sale/get-total-sales-fiado';
+import { GetCustomersWithPositiveFiadoDebts } from '@/application/use-cases/sale/get-customer-with-sale-fiado';
 
 @Controller('sales')
 export class SalesController {
@@ -44,6 +45,7 @@ export class SalesController {
     private getTotalRevenuesDeliverymanToday: GetTotalRevenuesDeliverymanToday,
     private getTotalMoneySalesDeliverymanToday: GetTotalMoneySalesDeliverymanToday,
     private readonly getTotalMoneySalesByPaymentMethodFiado: GetTotalMoneySalesByPaymentMethodFiado,
+    private getCustomersWithPositiveFiadoDebts: GetCustomersWithPositiveFiadoDebts,
   ) {}
 
   @Post()
@@ -266,6 +268,23 @@ export class SalesController {
       deliverymanId,
     );
     return { total };
+  }
+
+  @Get('/customers-with-debts')
+  async getCustomersWithDebts(
+    @Query() query: { page: string; itemsPerPage: string },
+  ): Promise<
+    { customerId: string; customerName: string; totalDebt: number }[]
+  > {
+    const pagination = {
+      page: Number(query.page),
+      itemsPerPage: Number(query.itemsPerPage),
+    };
+
+    const customersWithDebts =
+      await this.getCustomersWithPositiveFiadoDebts.execute(pagination);
+
+    return customersWithDebts;
   }
 
   @Get('/:id')

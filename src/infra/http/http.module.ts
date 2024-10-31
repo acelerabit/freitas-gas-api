@@ -96,6 +96,7 @@ import { GetTotalMoneySalesByPaymentMethodFiado } from '@/application/use-cases/
 import { CollectController } from './controllers/collect/collect.controller';
 import { CollectComodatoUseCase } from '@/application/use-cases/collect/collect-comodato';
 import { FetchAllCollects } from '@/application/use-cases/collect/fetch-collects';
+import { GetCustomersWithPositiveFiadoDebts } from '@/application/use-cases/sale/get-customer-with-sale-fiado';
 
 @Module({
   controllers: [
@@ -194,7 +195,8 @@ import { FetchAllCollects } from '@/application/use-cases/collect/fetch-collects
     FetchAllReadedNotifications,
     GetTotalMoneySalesByPaymentMethodFiado,
     CollectComodatoUseCase,
-    FetchAllCollects
+    FetchAllCollects,
+    GetCustomersWithPositiveFiadoDebts
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

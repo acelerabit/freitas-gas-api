@@ -85,4 +85,13 @@ export abstract class SalesRepository {
     endDate: Date,
     deliverymanId?: string,
   ): Promise<number>;
+  abstract getCustomersWithPositiveFiadoDebts(
+    pagination?: PaginationParams,
+  ): Promise<
+    {
+      customerId: string;
+      customerName: string;
+      totalDebt: number;
+    }[]
+  >;
 }

@@ -767,4 +767,50 @@ export class PrismaSalesRepository extends SalesRepository {
 
     return sales._sum.total / 100 || 0;
   }
+  async getCustomersWithPositiveFiadoDebts(
+    pagination?: PaginationParams,
+  ): Promise<{
+    customerId: string;
+    customerName: string;
+    totalDebt: number;
+  }[]> {
+    const debts = await this.prismaService.sales.findMany({
+      where: {
+        paymentMethod: 'FIADO',
+        total: { gte: 0 },
+      },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      take: pagination?.itemsPerPage ? Number(pagination.itemsPerPage) : undefined,
+      skip: pagination?.page ? (pagination.page - 1) * Number(pagination.itemsPerPage) : undefined,
+    });
+  
+    const customerDebts: { [key: string]: { customerId: string; customerName: string; totalDebt: number } } = {};
+  
+    debts.forEach(sale => {
+      const customerId = sale.customer.id;
+      if (!customerDebts[customerId]) {
+        customerDebts[customerId] = {
+          customerId,
+          customerName: sale.customer.name,
+          totalDebt: 0,
+        };
+      }
+      customerDebts[customerId].totalDebt += sale.total;
+    });
+  
+    return Object.values(customerDebts)
+      .filter(customer => customer.totalDebt > 0)
+      .map(customer => ({
+        ...customer,
+        totalDebt: customer.totalDebt / 100,
+      }));
+  }
+ 
 }
