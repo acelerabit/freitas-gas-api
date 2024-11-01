@@ -89,11 +89,20 @@ export class CollectComodatoUseCase {
       throw new NotFoundException('Produto não encontrado');
     }
 
+    const productEmpty = await this.productRepository.findByTypeAndStatus(
+      product.type,
+      'EMPTY',
+    );
+
+    if (!productEmpty) {
+      throw new NotFoundException('Produto não encontrado');
+    }
+
     customerWithComodato.quantity -= quantity;
 
     await this.customerWithComodatoRepository.update(customerWithComodato);
 
-    product.quantity += quantity;
+    productEmpty.quantity += quantity;
 
     await this.productRepository.updateProduct(product);
 

@@ -18,5 +18,6 @@ export class DepositToCompanyBody {
   depositDate: Date;
 
   @IsNotEmpty()
-  bank: string;
+  @IsOptional()
+  bank?: string;
 }
