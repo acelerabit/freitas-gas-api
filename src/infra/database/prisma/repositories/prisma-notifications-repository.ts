@@ -41,7 +41,10 @@ export class PrismaNotificationsRepository implements NotificationRepository {
     return notifications.map(PrismaNotificationsMapper.toDomain);
   }
 
-  async fetchAllUnread(userId: string, pagination: PaginationParams): Promise<Notification[]> {
+  async fetchAllUnread(
+    userId: string,
+    pagination: PaginationParams,
+  ): Promise<Notification[]> {
     const notifications = await this.prismaService.notification.findMany({
       where: {
         userId,
@@ -61,7 +64,28 @@ export class PrismaNotificationsRepository implements NotificationRepository {
     return notifications.map(PrismaNotificationsMapper.toDomain);
   }
 
-  async fetchAllReaded(userId: string, pagination: PaginationParams): Promise<Notification[]> {
+  async fetchAllUnreadWithoutPaginate(userId: string): Promise<Notification[]> {
+    const notifications = await this.prismaService.notification.findMany({
+      where: {
+        userId,
+        read: false,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    if (!notifications) {
+      return null;
+    }
+
+    return notifications.map(PrismaNotificationsMapper.toDomain);
+  }
+
+  async fetchAllReaded(
+    userId: string,
+    pagination: PaginationParams,
+  ): Promise<Notification[]> {
     const notifications = await this.prismaService.notification.findMany({
       where: {
         userId,

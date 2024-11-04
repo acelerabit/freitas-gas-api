@@ -98,6 +98,7 @@ import { CollectComodatoUseCase } from '@/application/use-cases/collect/collect-
 import { FetchAllCollects } from '@/application/use-cases/collect/fetch-collects';
 import { GetCustomersWithPositiveFiadoDebts } from '@/application/use-cases/sale/get-customer-with-sale-fiado';
 import { GetQuantityByCustomer } from '@/application/use-cases/collect/get-quantity-customer';
+import { FetchAllUnreadNotificationsWithoutPaginate } from '@/application/use-cases/notifications/fetch-all-unread-without-paginate';
 
 @Module({
   controllers: [
@@ -199,6 +200,7 @@ import { GetQuantityByCustomer } from '@/application/use-cases/collect/get-quant
     FetchAllCollects,
     GetCustomersWithPositiveFiadoDebts,
     GetQuantityByCustomer,
+    FetchAllUnreadNotificationsWithoutPaginate,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

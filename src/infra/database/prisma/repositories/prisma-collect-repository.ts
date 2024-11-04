@@ -7,8 +7,7 @@ import { PrismaCollectsMapper } from '../mappers/collect';
 
 @Injectable()
 export class PrismaCollectsRepository implements CollectsRepository {
-  constructor(private prismaService: PrismaService) { }
-
+  constructor(private prismaService: PrismaService) {}
 
   async findAll(pagination: PaginationParams): Promise<Collect[]> {
     const collects = await this.prismaService.collect.findMany({
@@ -18,8 +17,8 @@ export class PrismaCollectsRepository implements CollectsRepository {
         createdAt: 'desc',
       },
       include: {
-        customer: true
-      }
+        customer: true,
+      },
     });
     return collects.map(PrismaCollectsMapper.toDomain);
   }
@@ -39,36 +38,34 @@ export class PrismaCollectsRepository implements CollectsRepository {
     return count;
   }
 
-
   async create(collect: Collect): Promise<void> {
     await this.prismaService.collect.create({
       data: {
         customerId: collect.customerId,
         id: collect.id,
         quantity: collect.quantity,
-        createdAt: collect.createdAt
-      }
-    })
+        createdAt: collect.createdAt,
+      },
+    });
   }
 
   async findByCustomer(customerId: string): Promise<Collect | null> {
     const raw = await this.prismaService.collect.findFirst({
       where: {
-        customerId
-      }
-    })
+        customerId,
+      },
+    });
 
-    if(!raw) {
-      return null
+    if (!raw) {
+      return null;
     }
 
-    return PrismaCollectsMapper.toDomain(raw)
+    return PrismaCollectsMapper.toDomain(raw);
   }
 
   async findById(id: string): Promise<Collect | null> {
     throw new Error('Method not implemented.');
   }
-
 
   async update(collect: Collect): Promise<void> {
     await this.prismaService.collect.update({
@@ -77,9 +74,9 @@ export class PrismaCollectsRepository implements CollectsRepository {
       },
       data: {
         customerId: collect.customerId,
-        quantity: collect.quantity
-      }
-    })
+        quantity: collect.quantity,
+      },
+    });
   }
 
   async delete(id: string): Promise<void> {

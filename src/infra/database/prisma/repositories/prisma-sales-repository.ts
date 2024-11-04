@@ -129,10 +129,16 @@ export class PrismaSalesRepository extends SalesRepository {
       const newStockFull = productFull.quantity - quantity;
 
       if (newStockFull < 0) {
-        throw new BadRequestException('Estoque insuficiente', {
-          cause: new Error('Estoque insuficiente'),
-          description: 'Estoque insuficiente',
-        });
+        throw new BadRequestException(
+          'Estoque de bujão cheio insuficiente para fazer a troca',
+          {
+            cause: new Error(
+              'Estoque de bujão cheio insuficiente para fazer a troca',
+            ),
+            description:
+              'Estoque de bujão cheio insuficiente para fazer a troca',
+          },
+        );
       }
 
       const newStock = product.quantity + quantity;
@@ -591,6 +597,16 @@ export class PrismaSalesRepository extends SalesRepository {
   }
 
   async deleteSale(saleId: string): Promise<void> {
+    await this.prismaService.transaction.deleteMany({
+      where: {
+        sales: {
+          some: {
+            id: saleId,
+          },
+        },
+      },
+    });
+
     await this.prismaService.sales.delete({
       where: { id: saleId },
     });
@@ -669,12 +685,12 @@ export class PrismaSalesRepository extends SalesRepository {
       return {
         year: date.getFullYear(),
         month: date.getMonth() + 1,
-        total: Number(sale._sum.total/100),
+        total: Number(sale._sum.total / 100),
       };
     });
 
     return {
-      totalSales: Number(totalSales._sum.total/100 || 0),
+      totalSales: Number(totalSales._sum.total / 100 || 0),
       totalPerDay: formattedTotalPerDay,
       totalPerMonth,
     };
@@ -731,8 +747,8 @@ export class PrismaSalesRepository extends SalesRepository {
     const averageMonthlySales = totalSalesAmount / numberOfMonths;
 
     return {
-      averageDailySales: Number(averageDailySales?.toFixed(2))/100 || 0,
-      averageMonthlySales: Number(averageMonthlySales?.toFixed(2))/100 || 0,
+      averageDailySales: Number(averageDailySales?.toFixed(2)) / 100 || 0,
+      averageMonthlySales: Number(averageMonthlySales?.toFixed(2)) / 100 || 0,
     };
   }
   async getTotalMoneySalesByPaymentMethodFiado(
@@ -769,11 +785,13 @@ export class PrismaSalesRepository extends SalesRepository {
   }
   async getCustomersWithPositiveFiadoDebts(
     pagination?: PaginationParams,
-  ): Promise<{
-    customerId: string;
-    customerName: string;
-    totalDebt: number;
-  }[]> {
+  ): Promise<
+    {
+      customerId: string;
+      customerName: string;
+      totalDebt: number;
+    }[]
+  > {
     const debts = await this.prismaService.sales.findMany({
       where: {
         paymentMethod: 'FIADO',
@@ -787,13 +805,23 @@ export class PrismaSalesRepository extends SalesRepository {
           },
         },
       },
-      take: pagination?.itemsPerPage ? Number(pagination.itemsPerPage) : undefined,
-      skip: pagination?.page ? (pagination.page - 1) * Number(pagination.itemsPerPage) : undefined,
+      take: pagination?.itemsPerPage
+        ? Number(pagination.itemsPerPage)
+        : undefined,
+      skip: pagination?.page
+        ? (pagination.page - 1) * Number(pagination.itemsPerPage)
+        : undefined,
     });
-  
-    const customerDebts: { [key: string]: { customerId: string; customerName: string; totalDebt: number } } = {};
-  
-    debts.forEach(sale => {
+
+    const customerDebts: {
+      [key: string]: {
+        customerId: string;
+        customerName: string;
+        totalDebt: number;
+      };
+    } = {};
+
+    debts.forEach((sale) => {
       const customerId = sale.customer.id;
       if (!customerDebts[customerId]) {
         customerDebts[customerId] = {
@@ -804,13 +832,12 @@ export class PrismaSalesRepository extends SalesRepository {
       }
       customerDebts[customerId].totalDebt += sale.total;
     });
-  
+
     return Object.values(customerDebts)
-      .filter(customer => customer.totalDebt > 0)
-      .map(customer => ({
+      .filter((customer) => customer.totalDebt > 0)
+      .map((customer) => ({
         ...customer,
         totalDebt: customer.totalDebt / 100,
       }));
   }
- 
 }

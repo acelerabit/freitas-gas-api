@@ -98,13 +98,26 @@ export class CollectComodatoUseCase {
       throw new NotFoundException('Produto não encontrado');
     }
 
+    const productComodato = await this.productRepository.findByTypeAndStatus(
+      product.type,
+      'COMODATO',
+    );
+
+    if (!productComodato) {
+      throw new NotFoundException('Produto não encontrado');
+    }
+
     customerWithComodato.quantity -= quantity;
 
     await this.customerWithComodatoRepository.update(customerWithComodato);
 
+    productComodato.quantity -= quantity;
+
+    await this.productRepository.updateProduct(productComodato);
+
     productEmpty.quantity += quantity;
 
-    await this.productRepository.updateProduct(product);
+    await this.productRepository.updateProduct(productEmpty);
 
     const collect = Collect.create({
       customerId: customer.id,
