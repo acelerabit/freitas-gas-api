@@ -28,6 +28,8 @@ import { CustomerWithComodatosRepository } from '@/application/repositories/cust
 import { PrismaCustomerWithComodatosRepository } from './prisma/repositories/prisma-customer-with-comodato';
 import { CollectsRepository } from '@/application/repositories/collect-repository';
 import { PrismaCollectsRepository } from './prisma/repositories/prisma-collect-repository';
+import { BankAccountsRepository } from '@/application/repositories/bank-repositry';
+import { PrismaBankAccountsRepository } from './prisma/repositories/prisma-bank-account-repository';
 
 @Module({
   providers: [
@@ -83,6 +85,11 @@ import { PrismaCollectsRepository } from './prisma/repositories/prisma-collect-r
 
       provide: CollectsRepository,
       useClass: PrismaCollectsRepository,
+    },
+    {
+
+      provide: BankAccountsRepository,
+      useClass: PrismaBankAccountsRepository,
     },
     {
       provide: PrismaService,
@@ -141,6 +148,11 @@ import { PrismaCollectsRepository } from './prisma/repositories/prisma-collect-r
 
       provide: CustomerWithComodatosRepository,
       useClass: PrismaCustomerWithComodatosRepository,
+    },
+    {
+
+      provide: BankAccountsRepository,
+      useClass: PrismaBankAccountsRepository,
     },
     {
 

@@ -166,6 +166,15 @@ model ProductComodato {
   createdAt DateTime @default(now()) @map("created_at")
 }
 
+model BankAccount {
+  id String @id @default(uuid())
+
+  bank               String
+  paymentsAssociated String[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
 model Collect {
   id String @id @default(uuid())
 
