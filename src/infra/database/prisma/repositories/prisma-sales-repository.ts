@@ -840,4 +840,58 @@ export class PrismaSalesRepository extends SalesRepository {
         totalDebt: customer.totalDebt / 100,
       }));
   }
+  async getTotalSalesByPaymentMethod(
+    startDate?: Date,
+    endDate?: Date,
+    deliverymanId?: string,
+  ): Promise<Record<PaymentMethod, string>> {
+    const whereClause: any = {};
+    const today = new Date();
+
+    if (!startDate || isNaN(startDate.getTime())) {
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    }
+
+    if (!endDate || isNaN(endDate.getTime())) {
+      endDate = today;
+    }
+
+    const adjustedEndDate = new Date(endDate);
+    adjustedEndDate.setUTCHours(23, 59, 59, 999);
+
+    if (deliverymanId) {
+      whereClause.deliverymanId = deliverymanId;
+    }
+
+    whereClause.createdAt = {
+      gte: startDate,
+      lte: adjustedEndDate,
+    };
+  
+    const result = await this.prismaService.sales.groupBy({
+      by: ['paymentMethod'],
+      _sum: {
+        total: true,
+      },
+      where: whereClause,
+    });
+  
+    const formattedResult = result.reduce((acc, curr) => { 
+      const totalValue = curr._sum.total || 0;
+      const adjustedTotalValue = totalValue / 100;
+
+      acc[curr.paymentMethod] = adjustedTotalValue;
+    
+      return acc;
+    }, {} as Record<PaymentMethod, number>);
+
+    const formattedStringResult: Record<PaymentMethod, string> = Object.keys(formattedResult).reduce((acc, key) => {
+      const value = formattedResult[key as PaymentMethod];
+
+      acc[key as PaymentMethod] = value.toFixed(2).replace('.', ',');
+      return acc;
+    }, {} as Record<PaymentMethod, string>);
+    
+    return formattedStringResult;
+  }
 }

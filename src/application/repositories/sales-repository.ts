@@ -1,7 +1,7 @@
 import { Product } from '@/application/entities/product';
 import { PaginationParams } from '@/@shared/pagination-interface';
 import { Sale } from '../entities/sale';
-import { BottleStatus } from '@prisma/client';
+import { BottleStatus, PaymentMethod } from '@prisma/client';
 
 export type SortType =
   | 'createdAt'
@@ -94,4 +94,9 @@ export abstract class SalesRepository {
       totalDebt: number;
     }[]
   >;
+  abstract getTotalSalesByPaymentMethod(
+    startDate: Date,
+    endDate: Date,
+    deliverymanId?: string
+  ): Promise<Record<PaymentMethod, string>>;
 }

@@ -29,6 +29,7 @@ import { GetTotalRevenuesDeliverymanToday } from '@/application/use-cases/sale/g
 import { GetTotalMoneySalesDeliverymanToday } from '@/application/use-cases/sale/get-total-money-today-deliveryman';
 import { GetTotalMoneySalesByPaymentMethodFiado } from '@/application/use-cases/sale/get-total-sales-fiado';
 import { GetCustomersWithPositiveFiadoDebts } from '@/application/use-cases/sale/get-customer-with-sale-fiado';
+import { GetTotalSalesByPaymentMethodUseCase } from '@/application/use-cases/sale/get-total-sales-paymentMethod';
 
 @Controller('sales')
 export class SalesController {
@@ -46,6 +47,7 @@ export class SalesController {
     private getTotalMoneySalesDeliverymanToday: GetTotalMoneySalesDeliverymanToday,
     private readonly getTotalMoneySalesByPaymentMethodFiado: GetTotalMoneySalesByPaymentMethodFiado,
     private getCustomersWithPositiveFiadoDebts: GetCustomersWithPositiveFiadoDebts,
+    private readonly getTotalSalesByPaymentMethodUseCase: GetTotalSalesByPaymentMethodUseCase,
   ) {}
 
   @Post()
@@ -285,6 +287,24 @@ export class SalesController {
       await this.getCustomersWithPositiveFiadoDebts.execute(pagination);
 
     return customersWithDebts;
+  }
+
+  @Get('/total-by-payment-method')
+  async getTotalSalesByPaymentMethod(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('deliverymanId') deliverymanId?: string,
+  ) {
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+
+    const result = await this.getTotalSalesByPaymentMethodUseCase.execute({
+      startDate: startDateObj,
+      endDate: endDateObj,
+      deliverymanId,
+    });
+
+    return result.totalsByPaymentMethod;
   }
 
   @Get('/:id')
