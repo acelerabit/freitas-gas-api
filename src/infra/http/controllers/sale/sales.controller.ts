@@ -9,6 +9,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
+import { PaymentMethod } from '@prisma/client';
 import { Auth } from 'src/infra/decorators/auth.decorator';
 import { RegisterSaleUseCase } from '../../../../application/use-cases/sale/register-sale';
 import { Sale } from '../../../../application/entities/sale';
@@ -30,6 +31,7 @@ import { GetTotalMoneySalesDeliverymanToday } from '@/application/use-cases/sale
 import { GetTotalMoneySalesByPaymentMethodFiado } from '@/application/use-cases/sale/get-total-sales-fiado';
 import { GetCustomersWithPositiveFiadoDebts } from '@/application/use-cases/sale/get-customer-with-sale-fiado';
 import { GetTotalSalesByPaymentMethodUseCase } from '@/application/use-cases/sale/get-total-sales-paymentMethod';
+import { GetTotalSalesByPaymentMethodForTodayUseCase } from '@/application/use-cases/sale/get-total-sales-paymentMethod-today';
 
 @Controller('sales')
 export class SalesController {
@@ -48,6 +50,7 @@ export class SalesController {
     private readonly getTotalMoneySalesByPaymentMethodFiado: GetTotalMoneySalesByPaymentMethodFiado,
     private getCustomersWithPositiveFiadoDebts: GetCustomersWithPositiveFiadoDebts,
     private readonly getTotalSalesByPaymentMethodUseCase: GetTotalSalesByPaymentMethodUseCase,
+    private readonly getTotalSalesByPaymentMethodForTodayUseCase: GetTotalSalesByPaymentMethodForTodayUseCase,
   ) {}
 
   @Post()
@@ -289,6 +292,7 @@ export class SalesController {
     return customersWithDebts;
   }
 
+  @Auth(Role.ADMIN)
   @Get('/total-by-payment-method')
   async getTotalSalesByPaymentMethod(
     @Query('startDate') startDate: string,
@@ -305,6 +309,14 @@ export class SalesController {
     });
 
     return result.totalsByPaymentMethod;
+  }
+
+  @Get('total-sales/today/:deliverymanId')
+  async getTotalSalesByPaymentMethodForToday(
+    @Param('deliverymanId') deliverymanId: string,
+  ): Promise<Record<PaymentMethod, string>> {
+    const request = { deliverymanId };
+    return this.getTotalSalesByPaymentMethodForTodayUseCase.execute(request);
   }
 
   @Get('/:id')

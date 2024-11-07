@@ -9,6 +9,8 @@ import {
   Delete,
   Patch,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
+import { Auth } from 'src/infra/decorators/auth.decorator';
 import { ListProductsUseCase } from '../../../../application/use-cases/product/find-all-product';
 import { GetProductByIdUseCase } from '../../../../application/use-cases/product/find-product-by-id';
 import { CreateProductUseCase } from '../../../../application/use-cases/product/create-product';
@@ -33,6 +35,7 @@ export class ProductController {
     private readonly transferProductQuantityUseCase: TransferProductQuantityUseCase,
   ) {}
 
+  @Auth(Role.ADMIN, Role.DELIVERYMAN)
   @Get()
   async listAllProducts(): Promise<Product[]> {
     const { products } = await this.listProductsUseCase.execute();
@@ -40,6 +43,7 @@ export class ProductController {
     return products;
   }
 
+  @Auth(Role.ADMIN, Role.DELIVERYMAN)
   @Get('/list')
   async list() {
     const { products } = await this.listProductsUseCase.execute();
@@ -47,11 +51,13 @@ export class ProductController {
     return products.map(ProductsPresenters.toHTTP);
   }
 
+  @Auth(Role.ADMIN, Role.DELIVERYMAN)
   @Get(':id')
   async getProductById(@Param('id') id: string): Promise<Product> {
     return await this.getProductByIdUseCase.execute(id);
   }
 
+  @Auth(Role.ADMIN)
   @Post()
   async createProduct(
     @Body()
@@ -71,6 +77,7 @@ export class ProductController {
     });
   }
 
+  @Auth(Role.ADMIN)
   @Put(':id')
   async updateProduct(
     @Param('id') id: string,
@@ -92,6 +99,7 @@ export class ProductController {
     });
   }
 
+  @Auth(Role.ADMIN)
   @Patch('/:id/increase')
   async increase(
     @Param('id') id: string,
@@ -107,6 +115,7 @@ export class ProductController {
     });
   }
 
+  @Auth(Role.ADMIN)
   @Patch('/:id/decrease')
   async decrease(
     @Param('id') id: string,
@@ -122,6 +131,7 @@ export class ProductController {
     });
   }
 
+  @Auth(Role.ADMIN)
   @Patch('/productFrom/:productFrom/productTo/:productTo')
   async transfer(
     @Param('productFrom') productFrom: string,
@@ -140,6 +150,7 @@ export class ProductController {
     });
   }
 
+  @Auth(Role.ADMIN)
   @Delete(':id')
   async deleteProduct(@Param('id') id: string): Promise<void> {
     await this.deleteProductUseCase.execute(id);

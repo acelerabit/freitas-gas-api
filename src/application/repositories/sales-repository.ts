@@ -99,4 +99,7 @@ export abstract class SalesRepository {
     endDate: Date,
     deliverymanId?: string
   ): Promise<Record<PaymentMethod, string>>;
+  abstract getTotalSalesByPaymentMethodForToday(
+    deliverymanId: string
+  ): Promise<Record<PaymentMethod, string>>;
 }

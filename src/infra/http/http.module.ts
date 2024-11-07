@@ -105,6 +105,7 @@ import { GetCustomersWithPositiveFiadoDebts } from '@/application/use-cases/sale
 import { GetQuantityByCustomer } from '@/application/use-cases/collect/get-quantity-customer';
 import { FetchAllUnreadNotificationsWithoutPaginate } from '@/application/use-cases/notifications/fetch-all-unread-without-paginate';
 import { GetTotalSalesByPaymentMethodUseCase } from '@/application/use-cases/sale/get-total-sales-paymentMethod';
+import { GetTotalSalesByPaymentMethodForTodayUseCase } from '@/application/use-cases/sale/get-total-sales-paymentMethod-today';
 
 @Module({
   controllers: [
@@ -213,6 +214,7 @@ import { GetTotalSalesByPaymentMethodUseCase } from '@/application/use-cases/sal
     DeleteBankAccounts,
     UpdateBankAccount,
     GetTotalSalesByPaymentMethodUseCase,
+    GetTotalSalesByPaymentMethodForTodayUseCase,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

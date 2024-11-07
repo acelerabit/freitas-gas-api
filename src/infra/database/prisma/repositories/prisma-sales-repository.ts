@@ -894,4 +894,51 @@ export class PrismaSalesRepository extends SalesRepository {
     
     return formattedStringResult;
   }
+  async getTotalSalesByPaymentMethodForToday(
+    deliverymanId: string,
+  ): Promise<Record<string, string>> {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+  
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+  
+    const sales = await this.prismaService.sales.groupBy({
+      by: ['paymentMethod'],
+      where: {
+        createdAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+        transaction: {
+          userId: deliverymanId,
+        },
+      },
+      _sum: {
+        total: true,
+      },
+    });
+  
+    const result: Record<string, string> = {};
+
+    sales.forEach(sale => {
+      const totalValue = (sale._sum.total || 0) / 100;
+      result[sale.paymentMethod] = totalValue.toFixed(2);
+    });
+
+    const allPaymentMethods = await this.prismaService.sales.findMany({
+      select: {
+        paymentMethod: true,
+      },
+      distinct: ['paymentMethod'],
+    });
+  
+    allPaymentMethods.forEach(method => {
+      if (!(method.paymentMethod in result)) {
+        result[method.paymentMethod] = '0,00';
+      }
+    });
+  
+    return result;
+  }
 }
