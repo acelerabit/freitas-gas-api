@@ -14,6 +14,7 @@ import {
 import { CreateBankAccountBody } from './dtos/create-bank-account-body';
 import { UpdateBankAccountBody } from './dtos/update-bank-account-body';
 import { BankAccountsPresenters } from './presenters/bank-account.presenter';
+import { GetBankAccount } from '@/application/use-cases/bank-account/get-bank-account';
 
 @Controller('bank-account')
 export class BankAccountController {
@@ -21,7 +22,8 @@ export class BankAccountController {
     private createBankAccount: CreateBankAccounts,
     private fetchBankAccounts: FetchAllBankAccounts,
     private deleteBankAccount: DeleteBankAccounts,
-    private updateBankAccount: UpdateBankAccount
+    private updateBankAccount: UpdateBankAccount,
+    private getBankAccount: GetBankAccount
   ) {}
 
   @Post()
@@ -56,6 +58,16 @@ export class BankAccountController {
 
 
     return bankAccounts.map(BankAccountsPresenters.toHTTP)
+  }
+
+  @Get('/:id')
+  async get(@Param("id") id: string) {
+    const {bankAccount} = await this.getBankAccount.execute({
+      id
+    });
+
+
+    return BankAccountsPresenters.toHTTP(bankAccount)
   }
 
   @Delete("/:id")

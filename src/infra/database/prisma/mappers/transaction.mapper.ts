@@ -1,6 +1,7 @@
 import { Transaction } from 'src/application/entities/transaction';
 import { Prisma } from '@prisma/client';
 import { User } from '@/application/entities/user';
+import { BankAccount } from '@/application/entities/bank-account';
 
 export class PrismaTransactionsMapper {
   static toDomain(transaction: any) {
@@ -17,6 +18,11 @@ export class PrismaTransactionsMapper {
         depositDate: transaction.depositDate,
         createdAt: transaction.createdAt,
         bank: transaction.bank,
+        bankAccountId: transaction.bankAccountId,
+        bankAccount: transaction.bankAccount ? BankAccount.create({
+          bank: transaction.bankAccount.bank,
+          paymentsAssociated: transaction.bankAccount.paymentsAssociated
+        }) : null,
         user: transaction.user
           ? User.create({
               email: transaction.user.email,
@@ -44,8 +50,8 @@ export class PrismaTransactionsMapper {
       description: transaction.description,
       depositDate: transaction.depositDate,
       bank: transaction.bank,
+      bankAccountId: transaction.bankAccountId,
       createdAt: transaction.createdAt,
-
     };
   }
 }

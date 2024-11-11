@@ -51,7 +51,6 @@ export class UsersController {
     private fetchDeliverymans: FetchDeliverymans,
   ) {}
 
-  // @UseInterceptors(interceptor)
   @Auth(Role.ADMIN)
   @Post()
   async create(@Body() body: CreateUserBody) {

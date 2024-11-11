@@ -11,6 +11,7 @@ export class PrismaDebtsMapper {
         createdAt: debt.createdAt,
         updatedAt: debt.updatedAt,
         supplierId: debt.supplierId,
+        bankAccountId: debt.bankAccountId
       },
       debt.id,
     );
@@ -21,9 +22,13 @@ export class PrismaDebtsMapper {
       amount: debt.amount,
       dueDate: debt.dueDate,
       paid: debt.paid,
+      bankAccount: debt.bankAccountId
+      ? { connect: { id: debt.bankAccountId } }
+      : undefined,
       supplier: debt.supplierId
         ? { connect: { id: debt.supplierId } }
         : undefined,
+
     };
   }
 }

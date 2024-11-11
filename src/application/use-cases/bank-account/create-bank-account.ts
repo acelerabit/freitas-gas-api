@@ -12,6 +12,15 @@ export class CreateBankAccounts {
   constructor(private bankAccountsRepository: BankAccountsRepository) { }
 
   async execute({ bank, paymentsAssociated }: CreateBankAccountRequest): Promise<void> {
+    const hasSomeWithSameName = await this.bankAccountsRepository.alreadyGotThisName(bank);
+    
+    if(hasSomeWithSameName){
+      throw new BadRequestException('Já existe alguma conta com esse nome', {
+        cause: new Error('Já existe alguma conta com esse nome'),
+        description: 'Já existe alguma conta com esse nome',
+      });
+    }
+
     const hastSomeWithThisPaymentsMethods = await this.bankAccountsRepository.alreadyGotThisPaymentMethods(paymentsAssociated);
     
     if(hastSomeWithThisPaymentsMethods){

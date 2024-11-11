@@ -14,6 +14,7 @@ interface CreateTransactionRequest {
   customCategory?: string;
   amount: number;
   description?: string;
+  bankAccountId?: string;
 }
 
 @Injectable()
@@ -31,6 +32,7 @@ export class CreateTransactionUseCase {
     userId,
     customCategory,
     description,
+    bankAccountId
   }: CreateTransactionRequest): Promise<void> {
     const amountFormatted = amount * 100;
 
@@ -41,6 +43,7 @@ export class CreateTransactionUseCase {
       userId,
       customCategory,
       description,
+      bankAccountId
     });
 
     if (category === 'INCOME') {

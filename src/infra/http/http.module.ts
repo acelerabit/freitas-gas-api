@@ -106,6 +106,7 @@ import { GetQuantityByCustomer } from '@/application/use-cases/collect/get-quant
 import { FetchAllUnreadNotificationsWithoutPaginate } from '@/application/use-cases/notifications/fetch-all-unread-without-paginate';
 import { GetTotalSalesByPaymentMethodUseCase } from '@/application/use-cases/sale/get-total-sales-paymentMethod';
 import { GetTotalSalesByPaymentMethodForTodayUseCase } from '@/application/use-cases/sale/get-total-sales-paymentMethod-today';
+import { GetBankAccount } from '@/application/use-cases/bank-account/get-bank-account';
 
 @Module({
   controllers: [
@@ -215,7 +216,8 @@ import { GetTotalSalesByPaymentMethodForTodayUseCase } from '@/application/use-c
     UpdateBankAccount,
     GetTotalSalesByPaymentMethodUseCase,
     GetTotalSalesByPaymentMethodForTodayUseCase,
+    GetBankAccount
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })
-export class HttpModule {}
+export class HttpModule { }
