@@ -172,7 +172,9 @@ model BankAccount {
   bank               String
   paymentsAssociated String[]
 
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  transaction Transaction[]
+  Debt        Debt[]
 }
 
 model Collect {
@@ -237,6 +239,9 @@ model Transaction {
   referenceId    String?
   customCategory String?
 
+  bankAccount   BankAccount? @relation(fields: [bankAccountId], references: [id])
+  bankAccountId String?
+
   sales Sales[]
 
   @@map("transactions")
@@ -269,4 +274,7 @@ model Debt {
   updatedAt  DateTime @updatedAt
   supplier   Supplier @relation("SupplierDebts", fields: [supplierId], references: [id])
   supplierId String
+
+  bankAccount   BankAccount? @relation(fields: [bankAccountId], references: [id])
+  bankAccountId String?
 }

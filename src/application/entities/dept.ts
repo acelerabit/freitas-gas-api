@@ -6,6 +6,7 @@ export interface DebtProps {
   dueDate: Date;
   paid: boolean;
   supplierId: string;
+  bankAccountId?: string;
 }
 
 export class Debt {
@@ -48,6 +49,14 @@ export class Debt {
 
   public set paid(paid: boolean) {
     this.props.paid = paid;
+  }
+
+  public get bankAccountId(): string {
+    return this.props.bankAccountId;
+  }
+
+  public set bankAccountId(bankAccountId: string) {
+    this.props.bankAccountId = bankAccountId;
   }
 
   public get supplierId(): string {

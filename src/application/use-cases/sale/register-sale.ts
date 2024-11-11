@@ -11,6 +11,7 @@ import { ProductRepository } from '@/application/repositories/product-repository
 import { Product } from '@/application/entities/product';
 import { CustomerWithComodatosRepository } from '@/application/repositories/customer-with-comodato-repository';
 import { CustomerWithComodato } from '@/application/entities/customers-with-comodato';
+import { BankAccountsRepository } from '@/application/repositories/bank-repositry';
 
 @Injectable()
 export class RegisterSaleUseCase {
@@ -21,6 +22,7 @@ export class RegisterSaleUseCase {
     private readonly usersRepository: UsersRepository,
     private productRepository: ProductRepository,
     private customerWithComodatoRepository: CustomerWithComodatosRepository,
+    private bankRepository: BankAccountsRepository
   ) {}
 
   async execute(sale: Sale): Promise<void> {
@@ -113,6 +115,8 @@ export class RegisterSaleUseCase {
 
     await this.salesRepository.createSalesProducts(saleId, saleProducts);
 
+    const bankAccountToThisPayment = await this.bankRepository.accountToThisPaymentMethod(sale.paymentMethod);
+
     const transaction = new Transaction({
       amount: saleWithCustomerId.totalAmount,
       transactionType: TransactionType.EXIT,
@@ -120,6 +124,7 @@ export class RegisterSaleUseCase {
       category: TransactionCategory.SALE,
       userId: saleWithCustomerId.deliverymanId,
       referenceId: saleId,
+      bankAccountId: bankAccountToThisPayment.id ?? null
     });
 
     await this.transactionRepository.createTransaction(transaction);

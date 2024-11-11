@@ -10,7 +10,7 @@ export class DebtController {
     private readonly createDebt: CreateDebt,
     private readonly updateDebt: UpdateDebt,
     private readonly deleteDebt: DeleteDebt,
-  ) {}
+  ) { }
 
   @Post()
   async create(
@@ -22,17 +22,7 @@ export class DebtController {
       paid: boolean;
     },
   ): Promise<Debt> {
-    const newDebt = new Debt(
-      {
-        amount: debtData.amount,
-        dueDate: new Date(debtData.dueDate),
-        paid: debtData.paid,
-        supplierId: debtData.supplierId,
-      },
-      undefined,
-    );
-
-    return this.createDebt.execute(newDebt);
+    return this.createDebt.execute(debtData);
   }
 
   @Patch(':id')

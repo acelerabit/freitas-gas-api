@@ -9,6 +9,7 @@ import { BankAccount } from '@/application/entities/bank-account';
 export class PrismaBankAccountsRepository implements BankAccountsRepository {
   constructor(private prismaService: PrismaService) { }
   
+  
 
 
   async findAllWithoutPaginate(): Promise<BankAccount[]> {
@@ -52,10 +53,48 @@ export class PrismaBankAccountsRepository implements BankAccountsRepository {
   
     return !!exists;
   }
+
+  async accountToThisPaymentMethod(paymentMethod: string): Promise<BankAccount | null> {
+  
+    const result = await this.prismaService.bankAccount.findFirst({
+      where: {
+        paymentsAssociated: {
+          hasSome: paymentMethod
+        }
+      },
+    });
+
+    if(!result) {
+      return null
+    }
+
+    return PrismaBankAccountsMapper.toDomain(result)
+  }
+  
+
+  async alreadyGotThisName(name: string): Promise<BankAccount | null> {
+   const result = await this.prismaService.bankAccount.findFirst({
+      where: { bank: name },
+    });
+
+    if(!result) {
+      return null
+    }
+
+    return PrismaBankAccountsMapper.toDomain(result)
+  }
   
 
   async findById(id: string): Promise<BankAccount | null> {
-    throw new Error('Method not implemented.');
+    const result = await this.prismaService.bankAccount.findUnique({
+      where: { id },
+    });
+
+    if(!result) {
+      return null
+    }
+
+    return PrismaBankAccountsMapper.toDomain(result)
   }
 
 

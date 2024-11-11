@@ -25,7 +25,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
       id: transaction.id,
       amount: transaction.amount,
       transactionType: transaction.transactionType,
-      //mainAccount: transaction.mainAccount ?? false,
+      bankAccountId: transaction.bankAccountId,
       category: transaction.category,
       userId: transaction.userId,
       referenceId: transaction.referenceId ?? null,
