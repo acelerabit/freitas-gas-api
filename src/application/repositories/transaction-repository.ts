@@ -32,10 +32,11 @@ export abstract class TransactionRepository {
   ): Promise<Transaction[]>;
   abstract findAllDepositsByDeliverymanYesterday(
     deliverymanId: string,
-    
   ): Promise<Transaction[]>;
   abstract findAllDeposits(
     pagination: PaginationParams,
+    startDate: Date,
+    endDate: Date,
   ): Promise<Transaction[]>;
   abstract findAllExpensesByDeliveryman(
     deliverymanId: string,
@@ -43,6 +44,8 @@ export abstract class TransactionRepository {
   ): Promise<Transaction[]>;
   abstract findAllExpenses(
     pagination: PaginationParams,
+    startDate: Date,
+    endDate: Date,
   ): Promise<Transaction[]>;
   abstract findById(id: string): Promise<Transaction | null>;
   abstract update(transaction: Transaction): Promise<void>;
@@ -74,5 +77,5 @@ export abstract class TransactionRepository {
     startDate?: Date,
     endDate?: Date,
     deliverymanId?: string,
-  ): Promise<number>;  
+  ): Promise<number>;
 }
