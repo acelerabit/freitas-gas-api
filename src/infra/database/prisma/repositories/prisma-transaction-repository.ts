@@ -124,10 +124,18 @@ export class PrismaTransactionRepository extends TransactionRepository {
     return transactions.map(PrismaTransactionsMapper.toDomain);
   }
 
-  async findAllExpenses(pagination: PaginationParams): Promise<Transaction[]> {
+  async findAllExpenses(
+    pagination: PaginationParams,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<Transaction[]> {
     const transactions = await this.prismaService.transaction.findMany({
       where: {
         category: 'EXPENSE',
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
       },
       take: Number(pagination.itemsPerPage),
       skip: (pagination.page - 1) * Number(pagination.itemsPerPage),
@@ -191,11 +199,35 @@ export class PrismaTransactionRepository extends TransactionRepository {
     return transactions.map(PrismaTransactionsMapper.toDomain);
   }
 
-  async findAllDeposits(pagination: PaginationParams): Promise<Transaction[]> {
+  async findAllDeposits(
+    pagination: PaginationParams,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<Transaction[]> {
+    const whereCondition: any = { category: 'DEPOSIT' };
+
+    // Ajustando o filtro de data se startDate for fornecido
+    if (startDate) {
+      whereCondition.createdAt = {
+        gte: startDate, // "greater than or equal to" (maior ou igual)
+      };
+    }
+
+    // Ajustando o filtro de data se endDate for fornecido
+    if (endDate) {
+      // Ajustando a data final para o final do dia (23:59:59)
+      const adjustedEndDate = new Date(endDate);
+      adjustedEndDate.setHours(23, 59, 59);
+
+      if (whereCondition.createdAt) {
+        whereCondition.createdAt.lte = adjustedEndDate;
+      } else {
+        whereCondition.createdAt = { lte: adjustedEndDate };
+      }
+    }
+
     const transactions = await this.prismaService.transaction.findMany({
-      where: {
-        category: 'DEPOSIT',
-      },
+      where: whereCondition,
       take: Number(pagination.itemsPerPage),
       skip: (pagination.page - 1) * Number(pagination.itemsPerPage),
       orderBy: {
@@ -235,11 +267,11 @@ export class PrismaTransactionRepository extends TransactionRepository {
   }
 
   async getTotalExpensesByDeliveryman(id: string): Promise<number> {
-    const { startOfDay, endOfDay } = this.dateService.startAndEndOfTheDay(); // Fim do dia atual
+    const { startOfDay, endOfDay } = this.dateService.startAndEndOfTheDay();
 
     const total = await this.prismaService.transaction.aggregate({
       _sum: {
-        amount: true, // Soma do campo amount
+        amount: true,
       },
       where: {
         AND: [
@@ -291,10 +323,9 @@ export class PrismaTransactionRepository extends TransactionRepository {
     });
 
     const incomeTotal = transactionsSummary
-      .filter((t) => ['DEPOSIT', 'INCOME'].includes(t.category)) // Primeiro filtro para 'DEPOSIT' e 'INCOME'
+      .filter((t) => ['DEPOSIT', 'INCOME'].includes(t.category))
       .reduce((acc, curr) => acc + (curr._sum.amount || 0), 0);
 
-    // Somar apenas as transações do tipo 'SALE' que não tenham o 'paymentMethod' como 'DINHEIRO'
     const saleTransactions = await this.prismaService.transaction.findMany({
       where: {
         bankAccountId: null,
@@ -493,7 +524,6 @@ export class PrismaTransactionRepository extends TransactionRepository {
       },
     });
 
-    // Somar as transações 'SALE'
     const saleTotal = saleTransactions.reduce((acc, curr) => {
       return acc + (curr.amount || 0);
     }, 0);

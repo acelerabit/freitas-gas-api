@@ -3,8 +3,10 @@ import { PaginationParams } from '@/@shared/pagination-interface';
 import { Transaction } from '../../entities/transaction';
 import { TransactionRepository } from '@/application/repositories/transaction-repository';
 
-interface FetchDepositsRequest {
+export interface FetchDepositsRequest {
   pagination: PaginationParams;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 interface FetchDepositsResponse {
@@ -17,9 +19,13 @@ export class FetchDeposits {
 
   async execute({
     pagination,
+    startDate,
+    endDate,
   }: FetchDepositsRequest): Promise<FetchDepositsResponse> {
     const transactions = await this.transactionRepository.findAllDeposits(
       pagination,
+      startDate,
+      endDate,
     );
 
     return {

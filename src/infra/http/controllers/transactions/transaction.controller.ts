@@ -117,8 +117,17 @@ export class TransactionsController {
   @Get('/expenses')
   async findAllExpenses(
     @Query() pagination: PaginationParams,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ): Promise<Transaction[]> {
-    return this.fetchAllExpenses.execute(pagination);
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(new Date().setHours(0, 0, 0, 0));
+    const end = endDate
+      ? new Date(endDate)
+      : new Date(new Date().setHours(23, 59, 59, 999));
+
+    return this.fetchAllExpenses.execute(pagination, start, end);
   }
 
   @Get('/expenses-total-today/:deliverymanId')
@@ -180,14 +189,22 @@ export class TransactionsController {
     query: {
       page?: string;
       itemsPerPage?: string;
+      startDate?: string;
+      endDate?: string;
     },
   ) {
-    const { page, itemsPerPage } = query;
+    const { page, itemsPerPage, startDate, endDate } = query;
+
+    const startDateObj = startDate ? new Date(startDate) : undefined;
+    const endDateObj = endDate ? new Date(endDate) : undefined;
+
     const { transactions } = await this.fetchDeposits.execute({
       pagination: {
         itemsPerPage: Number(itemsPerPage),
         page: Number(page),
       },
+      startDate: startDateObj,
+      endDate: endDateObj,
     });
 
     return transactions.map(TransactionsPresenters.toHTTP);
