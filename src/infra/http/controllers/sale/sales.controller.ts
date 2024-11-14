@@ -297,9 +297,13 @@ export class SalesController {
   }
 
   @Patch('/mark-as-paid/:id')
-  async markPaid(@Param('id') id: string): Promise<void> {
+  async markPaid(
+    @Param('id') id: string,
+    @Body() body: { bankAccountId: string },
+  ): Promise<void> {
     await this.markAsPaid.execute({
       id,
+      bankAccountId: body.bankAccountId,
     });
 
     return;

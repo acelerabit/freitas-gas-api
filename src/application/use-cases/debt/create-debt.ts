@@ -12,19 +12,22 @@ interface CreateDebitRequest {
 
 @Injectable()
 export class CreateDebt {
-  constructor(private debtsRepository: DebtsRepository) { }
+  constructor(private debtsRepository: DebtsRepository) {}
 
-  async execute({ supplierId, amount, dueDate, paid, bankAccountId }: CreateDebitRequest): Promise<Debt> {
-
-    const newDebt = new Debt(
-      {
-        amount: amount,
-        dueDate: new Date(dueDate),
-        paid: paid,
-        supplierId: supplierId,
-        bankAccountId
-      },
-    );
+  async execute({
+    supplierId,
+    amount,
+    dueDate,
+    paid,
+    bankAccountId,
+  }: CreateDebitRequest): Promise<Debt> {
+    const newDebt = new Debt({
+      amount: amount,
+      dueDate: new Date(dueDate),
+      paid: paid,
+      supplierId: supplierId,
+      bankAccountId,
+    });
 
     return this.debtsRepository.create(newDebt);
   }

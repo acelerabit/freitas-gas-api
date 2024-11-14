@@ -203,13 +203,18 @@ export class PrismaSalesRepository extends SalesRepository {
     }
   }
 
-  async markAsPaid(id: string): Promise<void> {
+  async markAsPaid(id: string, bankAccountId: string): Promise<void> {
     await this.prismaService.sales.update({
       where: {
         id,
       },
       data: {
         paid: true,
+        transaction: {
+          update: {
+            bankAccountId,
+          },
+        },
       },
     });
   }

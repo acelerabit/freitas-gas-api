@@ -419,7 +419,15 @@ export class PrismaTransactionRepository extends TransactionRepository {
           category: 'SALE',
           sales: {
             some: {
-              paymentMethod: { notIn: ['DINHEIRO', 'FIADO'] },
+              OR: [
+                {
+                  paymentMethod: { not: 'DINHEIRO' }, // Excluir 'DINHEIRO'
+                },
+                {
+                  paymentMethod: 'FIADO', // Incluir 'FIADO'
+                  paid: true, // Somente quando 'paid' for true
+                },
+              ],
             },
           },
         },
@@ -485,9 +493,26 @@ export class PrismaTransactionRepository extends TransactionRepository {
         0,
       );
 
+      const debtTotal = await this.prismaService.debt.aggregate({
+        _sum: {
+          amount: true,
+        },
+        where: {
+          bankAccountId: bankAccount.id,
+          paid: true, // Somente dívidas pagas
+        },
+      });
+
+      const totalDebt = debtTotal._sum.amount || 0;
+
       // Calcular o saldo final
       const balance =
-        totalIncome + saleTotal + incomingTotal - expenseTotal - outgoingTotal;
+        totalIncome +
+        saleTotal +
+        incomingTotal -
+        expenseTotal -
+        outgoingTotal -
+        totalDebt;
 
       // Adicionar o resultado no array
       result.push({

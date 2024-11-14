@@ -22,7 +22,7 @@ export class RegisterSaleUseCase {
     private readonly usersRepository: UsersRepository,
     private productRepository: ProductRepository,
     private customerWithComodatoRepository: CustomerWithComodatosRepository,
-    private bankRepository: BankAccountsRepository
+    private bankRepository: BankAccountsRepository,
   ) {}
 
   async execute(sale: Sale): Promise<void> {
@@ -115,7 +115,8 @@ export class RegisterSaleUseCase {
 
     await this.salesRepository.createSalesProducts(saleId, saleProducts);
 
-    const bankAccountToThisPayment = await this.bankRepository.accountToThisPaymentMethod(sale.paymentMethod);
+    const bankAccountToThisPayment =
+      await this.bankRepository.accountToThisPaymentMethod(sale.paymentMethod);
 
     const transaction = new Transaction({
       amount: saleWithCustomerId.totalAmount,
@@ -124,7 +125,7 @@ export class RegisterSaleUseCase {
       category: TransactionCategory.SALE,
       userId: saleWithCustomerId.deliverymanId,
       referenceId: saleId,
-      bankAccountId: bankAccountToThisPayment.id ?? null
+      bankAccountId: bankAccountToThisPayment?.id ?? null,
     });
 
     await this.transactionRepository.createTransaction(transaction);
