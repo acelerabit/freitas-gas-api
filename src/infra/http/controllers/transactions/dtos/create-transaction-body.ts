@@ -21,6 +21,10 @@ export class CreateTransactionBody {
 
   @IsNotEmpty()
   @IsOptional()
+  bankAccountId?: string;
+
+  @IsNotEmpty()
+  @IsOptional()
   description?: string;
 
   @IsNotEmpty()

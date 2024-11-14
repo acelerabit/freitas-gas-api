@@ -16,5 +16,12 @@ export class TransferToDeliverymanBody {
   description: string;
 
   @IsNotEmpty()
+  @IsOptional()
+  bankAccountId?: string;
+
+  @IsNotEmpty()
+  senderUserId: string;
+
+  @IsNotEmpty()
   amount: number;
 }

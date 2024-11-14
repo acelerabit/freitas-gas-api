@@ -17,12 +17,15 @@ export class PrismaTransactionsMapper {
         description: transaction.description,
         depositDate: transaction.depositDate,
         createdAt: transaction.createdAt,
+        senderUserId: transaction.senderUserId,
         bank: transaction.bank,
         bankAccountId: transaction.bankAccountId,
-        bankAccount: transaction.bankAccount ? BankAccount.create({
-          bank: transaction.bankAccount.bank,
-          paymentsAssociated: transaction.bankAccount.paymentsAssociated
-        }) : null,
+        bankAccount: transaction.bankAccount
+          ? BankAccount.create({
+              bank: transaction.bankAccount.bank,
+              paymentsAssociated: transaction.bankAccount.paymentsAssociated,
+            })
+          : null,
         user: transaction.user
           ? User.create({
               email: transaction.user.email,
@@ -51,6 +54,7 @@ export class PrismaTransactionsMapper {
       depositDate: transaction.depositDate,
       bank: transaction.bank,
       bankAccountId: transaction.bankAccountId,
+      senderUserId: transaction.senderUserId,
       createdAt: transaction.createdAt,
     };
   }

@@ -19,5 +19,9 @@ export class DepositToCompanyBody {
 
   @IsNotEmpty()
   @IsOptional()
+  bankAccountId?: string;
+
+  @IsNotEmpty()
+  @IsOptional()
   bank?: string;
 }

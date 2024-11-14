@@ -15,6 +15,7 @@ export type SortType =
 
 export abstract class SalesRepository {
   abstract createSale(sale: Sale): Promise<string>;
+  abstract markAsPaid(id: string): Promise<void>;
   abstract updateStock(
     productId: string,
     quantityChange: number,
@@ -97,9 +98,9 @@ export abstract class SalesRepository {
   abstract getTotalSalesByPaymentMethod(
     startDate: Date,
     endDate: Date,
-    deliverymanId?: string
+    deliverymanId?: string,
   ): Promise<Record<PaymentMethod, string>>;
   abstract getTotalSalesByPaymentMethodForToday(
-    deliverymanId: string
+    deliverymanId: string,
   ): Promise<Record<PaymentMethod, string>>;
 }

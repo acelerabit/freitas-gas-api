@@ -29,6 +29,7 @@ export class PrismaSalesMapper {
         customer: sale.customer ?? null,
         deliveryman: sale?.transaction?.user ?? null,
         transactionId: sale?.transaction?.id,
+        paid: sale.paid,
       },
       sale.id,
     );
@@ -44,6 +45,7 @@ export class PrismaSalesMapper {
       customerId: sale.customerId,
       transactionId: sale.transactionId,
       createdAt: sale.createdAt,
+      paid: sale.paid,
     };
   }
 }

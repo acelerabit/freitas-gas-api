@@ -30,6 +30,8 @@ import { CollectsRepository } from '@/application/repositories/collect-repositor
 import { PrismaCollectsRepository } from './prisma/repositories/prisma-collect-repository';
 import { BankAccountsRepository } from '@/application/repositories/bank-repositry';
 import { PrismaBankAccountsRepository } from './prisma/repositories/prisma-bank-account-repository';
+import { AccountsTransferRepository } from '@/application/repositories/account-transfer';
+import { PrismaAccountTransfersRepository } from './prisma/repositories/prisma-account-transfer-repository';
 
 @Module({
   providers: [
@@ -82,14 +84,16 @@ import { PrismaBankAccountsRepository } from './prisma/repositories/prisma-bank-
       useClass: PrismaCustomerWithComodatosRepository,
     },
     {
-
       provide: CollectsRepository,
       useClass: PrismaCollectsRepository,
     },
     {
-
       provide: BankAccountsRepository,
       useClass: PrismaBankAccountsRepository,
+    },
+    {
+      provide: AccountsTransferRepository,
+      useClass: PrismaAccountTransfersRepository,
     },
     {
       provide: PrismaService,
@@ -145,19 +149,20 @@ import { PrismaBankAccountsRepository } from './prisma/repositories/prisma-bank-
       useClass: PrismaIncomeTypesRepository,
     },
     {
-
       provide: CustomerWithComodatosRepository,
       useClass: PrismaCustomerWithComodatosRepository,
     },
     {
-
       provide: BankAccountsRepository,
       useClass: PrismaBankAccountsRepository,
     },
     {
-
       provide: CollectsRepository,
       useClass: PrismaCollectsRepository,
+    },
+    {
+      provide: AccountsTransferRepository,
+      useClass: PrismaAccountTransfersRepository,
     },
     {
       provide: PrismaService,
@@ -167,4 +172,4 @@ import { PrismaBankAccountsRepository } from './prisma/repositories/prisma-bank-
     },
   ],
 })
-export class DatabaseModule { }
+export class DatabaseModule {}

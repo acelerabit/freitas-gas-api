@@ -202,6 +202,18 @@ export class PrismaSalesRepository extends SalesRepository {
       return;
     }
   }
+
+  async markAsPaid(id: string): Promise<void> {
+    await this.prismaService.sales.update({
+      where: {
+        id,
+      },
+      data: {
+        paid: true,
+      },
+    });
+  }
+
   async findById(id: string): Promise<Sale | null> {
     const raw = await this.prismaService.sales.findUnique({
       where: {
@@ -813,31 +825,34 @@ export class PrismaSalesRepository extends SalesRepository {
         : undefined,
     });
 
-    const customerDebts: {
-      [key: string]: {
-        customerId: string;
-        customerName: string;
-        totalDebt: number;
-      };
-    } = {};
+    // const customerDebts: {
+    //   [key: string]: {
+    //     customerId: string;
+    //     customerName: string;
+    //     totalDebt: number;
+    //   };
+    // } = {};
 
-    debts.forEach((sale) => {
-      const customerId = sale.customer.id;
-      if (!customerDebts[customerId]) {
-        customerDebts[customerId] = {
-          customerId,
-          customerName: sale.customer.name,
-          totalDebt: 0,
-        };
-      }
-      customerDebts[customerId].totalDebt += sale.total;
-    });
+    // debts.forEach((sale) => {
+    //   const customerId = sale.customer.id;
+    //   if (!customerDebts[customerId]) {
+    //     customerDebts[customerId] = {
+    //       customerId,
+    //       customerName: sale.customer.name,
+    //       totalDebt: 0,
+    //     };
+    //   }
+    //   customerDebts[customerId].totalDebt += sale.total;
+    // });
 
-    return Object.values(customerDebts)
-      .filter((customer) => customer.totalDebt > 0)
-      .map((customer) => ({
-        ...customer,
-        totalDebt: customer.totalDebt / 100,
+    return debts
+      .filter((debts) => debts.total > 0)
+      .map((debt) => ({
+        id: debt.id,
+        customerId: debt.customerId,
+        customerName: debt.customer.name,
+        totalDebt: debt.total / 100,
+        paid: debt.paid,
       }));
   }
   async getTotalSalesByPaymentMethod(
@@ -867,7 +882,7 @@ export class PrismaSalesRepository extends SalesRepository {
       gte: startDate,
       lte: adjustedEndDate,
     };
-  
+
     const result = await this.prismaService.sales.groupBy({
       by: ['paymentMethod'],
       _sum: {
@@ -875,23 +890,25 @@ export class PrismaSalesRepository extends SalesRepository {
       },
       where: whereClause,
     });
-  
-    const formattedResult = result.reduce((acc, curr) => { 
+
+    const formattedResult = result.reduce((acc, curr) => {
       const totalValue = curr._sum.total || 0;
       const adjustedTotalValue = totalValue / 100;
 
       acc[curr.paymentMethod] = adjustedTotalValue;
-    
+
       return acc;
     }, {} as Record<PaymentMethod, number>);
 
-    const formattedStringResult: Record<PaymentMethod, string> = Object.keys(formattedResult).reduce((acc, key) => {
+    const formattedStringResult: Record<PaymentMethod, string> = Object.keys(
+      formattedResult,
+    ).reduce((acc, key) => {
       const value = formattedResult[key as PaymentMethod];
 
       acc[key as PaymentMethod] = value.toFixed(2).replace('.', ',');
       return acc;
     }, {} as Record<PaymentMethod, string>);
-    
+
     return formattedStringResult;
   }
   async getTotalSalesByPaymentMethodForToday(
@@ -899,10 +916,10 @@ export class PrismaSalesRepository extends SalesRepository {
   ): Promise<Record<string, string>> {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
-  
+
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
-  
+
     const sales = await this.prismaService.sales.groupBy({
       by: ['paymentMethod'],
       where: {
@@ -918,10 +935,10 @@ export class PrismaSalesRepository extends SalesRepository {
         total: true,
       },
     });
-  
+
     const result: Record<string, string> = {};
 
-    sales.forEach(sale => {
+    sales.forEach((sale) => {
       const totalValue = (sale._sum.total || 0) / 100;
       result[sale.paymentMethod] = totalValue.toFixed(2);
     });
@@ -932,13 +949,13 @@ export class PrismaSalesRepository extends SalesRepository {
       },
       distinct: ['paymentMethod'],
     });
-  
-    allPaymentMethods.forEach(method => {
+
+    allPaymentMethods.forEach((method) => {
       if (!(method.paymentMethod in result)) {
         result[method.paymentMethod] = '0,00';
       }
     });
-  
+
     return result;
   }
 }

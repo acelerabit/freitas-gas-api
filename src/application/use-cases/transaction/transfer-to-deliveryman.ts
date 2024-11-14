@@ -11,6 +11,8 @@ interface TransferToDeliverymanRequest {
   category: TransactionCategory;
   amount: number;
   description?: string;
+  bankAccountId?: string;
+  senderUserId: string;
 }
 
 @Injectable()
@@ -27,6 +29,8 @@ export class TransferToDeliveryman {
     category,
     customCategory,
     description,
+    bankAccountId,
+    senderUserId,
   }: TransferToDeliverymanRequest) {
     const deliveryman = await this.usersRepository.findById(deliverymanId);
 
@@ -51,6 +55,8 @@ export class TransferToDeliveryman {
       userId: deliverymanId,
       customCategory,
       description,
+      bankAccountId,
+      senderUserId,
     });
 
     await this.transactionsRepository.createTransaction(transaction);

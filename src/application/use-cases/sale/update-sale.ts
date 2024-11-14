@@ -23,6 +23,7 @@ interface UpdateSaleUseCaseProps {
   paymentMethod?: string;
   totalAmount?: number;
   type?: string;
+  createdAt?: Date;
 }
 
 @Injectable()
@@ -41,6 +42,7 @@ export class UpdateSaleUseCase {
     paymentMethod,
     products,
     type,
+    createdAt,
   }: UpdateSaleUseCaseProps): Promise<void> {
     const customer = await this.customerRepository.findById(customerId);
     const isComodato = products.some(
@@ -71,8 +73,8 @@ export class UpdateSaleUseCase {
           {
             type: product.type as ProductType,
             status: product.status as BottleStatus,
-            price: product.price,
-            salePrice: product.salePrice,
+            price: product.price * 100,
+            salePrice: product.salePrice * 100,
             quantity: product.quantity,
           },
           product.productId,
@@ -100,6 +102,10 @@ export class UpdateSaleUseCase {
     }
     if (type) {
       updates.type = type;
+    }
+
+    if (createdAt) {
+      updates.createdAt = createdAt;
     }
 
     Object.assign(sale, updates);

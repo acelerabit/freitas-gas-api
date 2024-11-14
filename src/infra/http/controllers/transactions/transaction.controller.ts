@@ -38,6 +38,7 @@ import { FetchDeposits } from '@/application/use-cases/transaction/fetch-deposit
 import { FetchDepositsByDeliveryman } from '@/application/use-cases/transaction/fetch-deliveryman-deposits';
 import { TransactionsPresenters } from './presenters/transaction.presenter';
 import { FetchIncomeTypesUseCase } from '@/application/use-cases/transaction/fetch-income-types';
+import { CalculateAccountsCompanyBalance } from '@/application/use-cases/transaction/calculate-accounts-company-balance';
 
 @Controller('transactions')
 export class TransactionsController {
@@ -61,6 +62,7 @@ export class TransactionsController {
     private fetchDeposits: FetchDeposits,
     private fetchDepositsByDeliveryman: FetchDepositsByDeliveryman,
     private fetchIncomeTypesUseCase: FetchIncomeTypesUseCase,
+    private calculateAccountsCompanyBalance: CalculateAccountsCompanyBalance,
   ) {}
 
   @Post()
@@ -196,6 +198,13 @@ export class TransactionsController {
     const { finalBalance } = await this.calculateCompanyBalance.execute();
 
     return finalBalance;
+  }
+
+  @Get('/balances')
+  async balances() {
+    const { balances } = await this.calculateAccountsCompanyBalance.execute();
+
+    return balances;
   }
 
   @Get('/deliveryman/balance/:deliverymanId')

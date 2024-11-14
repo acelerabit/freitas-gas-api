@@ -19,6 +19,7 @@ export interface TransactionProps {
   user?: User;
   bankAccount?: BankAccount;
   bankAccountId?: string;
+  senderUserId?: string;
 }
 
 export class Transaction {
@@ -75,6 +76,14 @@ export class Transaction {
 
   set bankAccountId(value: string) {
     this._props.bankAccountId = value;
+  }
+
+  get senderUserId(): string {
+    return this._props.senderUserId;
+  }
+
+  set senderUserId(value: string) {
+    this._props.senderUserId = value;
   }
 
   get bankAccount(): BankAccount {

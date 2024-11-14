@@ -15,24 +15,34 @@ export class UpdateBankAccount {
   async execute({
     id,
     bank,
-    paymentsAssociated
+    paymentsAssociated,
   }: UpdateBankAccountRequest): Promise<void> {
     const bankAccount = await this.bankAccountsRepository.findById(id);
 
     if (!bankAccount) {
-      throw new BadRequestException('Não foi possivel editar o usuário', {
-        cause: new Error('Usuário não encontrado'),
-        description: 'Usuário não encontrado',
+      throw new BadRequestException('Não foi possivel editar o a conta', {
+        cause: new Error('Conta não encontrada'),
+        description: 'Conta não encontrada',
       });
     }
 
-    const hastSomeWithThisPaymentsMethods = await this.bankAccountsRepository.alreadyGotThisPaymentMethods(paymentsAssociated, id);
-    
-    if(hastSomeWithThisPaymentsMethods){
-      throw new BadRequestException('Já existe alguma conta com algum desses tipos de pagamento', {
-        cause: new Error('Já existe alguma conta com algum desses tipos de pagamento'),
-        description: 'Já existe alguma conta com algum desses tipos de pagamento',
-      });
+    const hastSomeWithThisPaymentsMethods =
+      await this.bankAccountsRepository.alreadyGotThisPaymentMethods(
+        paymentsAssociated,
+        id,
+      );
+
+    if (hastSomeWithThisPaymentsMethods) {
+      throw new BadRequestException(
+        'Já existe alguma conta com algum desses tipos de pagamento',
+        {
+          cause: new Error(
+            'Já existe alguma conta com algum desses tipos de pagamento',
+          ),
+          description:
+            'Já existe alguma conta com algum desses tipos de pagamento',
+        },
+      );
     }
 
     const updates: Partial<BankAccount> = {};
@@ -45,11 +55,10 @@ export class UpdateBankAccount {
       updates.paymentsAssociated = paymentsAssociated;
     }
 
-
     Object.assign(bankAccount, updates);
 
     await this.bankAccountsRepository.update(bankAccount);
 
-    return
+    return;
   }
 }

@@ -107,6 +107,14 @@ import { FetchAllUnreadNotificationsWithoutPaginate } from '@/application/use-ca
 import { GetTotalSalesByPaymentMethodUseCase } from '@/application/use-cases/sale/get-total-sales-paymentMethod';
 import { GetTotalSalesByPaymentMethodForTodayUseCase } from '@/application/use-cases/sale/get-total-sales-paymentMethod-today';
 import { GetBankAccount } from '@/application/use-cases/bank-account/get-bank-account';
+import { MarkAsPaid } from '@/application/use-cases/sale/mask-as-paid';
+import { CalculateAccountsCompanyBalance } from '@/application/use-cases/transaction/calculate-accounts-company-balance';
+import { AccountTransferController } from './controllers/account-transfer/account-transfer.controller';
+import { CreateAccountTransfer } from '@/application/use-cases/account-transfer/create-account-transfer';
+import { FetchAllAccountTransfers } from '@/application/use-cases/account-transfer/fetch-account-transfers';
+import { DeleteAccountTransfer } from '@/application/use-cases/account-transfer/delete-account-transfer';
+import { UpdateAccountTransfer } from '@/application/use-cases/account-transfer/update-account-transfer';
+import { GetAccountTransfers } from '@/application/use-cases/account-transfer/get-account-transfer';
 
 @Module({
   controllers: [
@@ -124,7 +132,8 @@ import { GetBankAccount } from '@/application/use-cases/bank-account/get-bank-ac
     SupplierController,
     DebtController,
     CollectController,
-    BankAccountController
+    BankAccountController,
+    AccountTransferController,
   ],
   providers: [
     CreateUser,
@@ -216,8 +225,15 @@ import { GetBankAccount } from '@/application/use-cases/bank-account/get-bank-ac
     UpdateBankAccount,
     GetTotalSalesByPaymentMethodUseCase,
     GetTotalSalesByPaymentMethodForTodayUseCase,
-    GetBankAccount
+    GetBankAccount,
+    MarkAsPaid,
+    CalculateAccountsCompanyBalance,
+    CreateAccountTransfer,
+    FetchAllAccountTransfers,
+    DeleteAccountTransfer,
+    UpdateAccountTransfer,
+    GetAccountTransfers,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })
-export class HttpModule { }
+export class HttpModule {}

@@ -14,6 +14,7 @@ export interface SaleProps {
   deliveryman?: User;
   createdAt?: Date;
   transactionId?: string;
+  paid?: boolean;
 }
 
 export class Sale {
@@ -76,6 +77,14 @@ export class Sale {
 
   set transactionId(value: string) {
     this._props.transactionId = value;
+  }
+
+  get paid(): boolean {
+    return this._props.paid;
+  }
+
+  set paid(value: boolean) {
+    this._props.paid = value;
   }
 
   get products(): Product[] {

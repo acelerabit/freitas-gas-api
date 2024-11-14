@@ -14,6 +14,12 @@ export abstract class TransactionRepository {
   abstract createTransaction(transaction: Transaction): Promise<void>;
   abstract findAllWithoutPaginate(): Promise<Transaction[]>;
   abstract calculateBalance(): Promise<number>;
+  abstract calculateAccountsBalance(): Promise<
+    {
+      bank: string;
+      balance: number;
+    }[]
+  >;
   abstract findAll(
     type?: string,
     orderByField?: SortType,
@@ -32,7 +38,6 @@ export abstract class TransactionRepository {
   ): Promise<Transaction[]>;
   abstract findAllDepositsByDeliverymanYesterday(
     deliverymanId: string,
-    
   ): Promise<Transaction[]>;
   abstract findAllDeposits(
     pagination: PaginationParams,
@@ -74,5 +79,5 @@ export abstract class TransactionRepository {
     startDate?: Date,
     endDate?: Date,
     deliverymanId?: string,
-  ): Promise<number>;  
+  ): Promise<number>;
 }

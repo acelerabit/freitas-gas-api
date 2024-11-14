@@ -12,7 +12,6 @@ import { DateService } from '@/infra/dates/date.service';
 
 @Injectable()
 export class PrismaTransactionRepository extends TransactionRepository {
-
   constructor(
     private prismaService: PrismaService,
     private dateService: DateService,
@@ -33,6 +32,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
       customCategory: transaction.customCategory ?? null,
       description: transaction.description,
       depositDate: transaction.depositDate,
+      senderUserId: transaction.senderUserId,
       bank: transaction.bank,
     };
 
@@ -85,9 +85,9 @@ export class PrismaTransactionRepository extends TransactionRepository {
             {
               customCategory: type
                 ? {
-                  contains: type,
-                  mode: 'insensitive',
-                }
+                    contains: type,
+                    mode: 'insensitive',
+                  }
                 : {},
             },
           ],
@@ -162,7 +162,9 @@ export class PrismaTransactionRepository extends TransactionRepository {
     return transactions.map(PrismaTransactionsMapper.toDomain);
   }
 
-  async findAllDepositsByDeliverymanYesterday(deliverymanId: string): Promise<Transaction[]> {
+  async findAllDepositsByDeliverymanYesterday(
+    deliverymanId: string,
+  ): Promise<Transaction[]> {
     const { startOfYesterday, endOfYesterday } =
       await this.dateService.startAndEndOfYesterday();
 
@@ -185,7 +187,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
         createdAt: 'desc',
       },
     });
-    
+
     return transactions.map(PrismaTransactionsMapper.toDomain);
   }
 
@@ -281,6 +283,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
         amount: true,
       },
       where: {
+        bankAccountId: null,
         category: {
           in: ['DEPOSIT', 'SALE', 'INCOME', 'EXPENSE', 'WITHDRAW', 'TRANSFER'],
         },
@@ -294,13 +297,14 @@ export class PrismaTransactionRepository extends TransactionRepository {
     // Somar apenas as transações do tipo 'SALE' que não tenham o 'paymentMethod' como 'DINHEIRO'
     const saleTransactions = await this.prismaService.transaction.findMany({
       where: {
+        bankAccountId: null,
         category: 'SALE',
         sales: {
           some: {
             paymentMethod: {
               not: {
                 in: ['DINHEIRO', 'FIADO'],
-              }
+              },
             },
           },
         },
@@ -317,30 +321,151 @@ export class PrismaTransactionRepository extends TransactionRepository {
 
     const saleTotal = saleSummary['SALE'] ? saleSummary['SALE']._sum.amount : 0;
 
-    // Consulta separada para somar apenas as despesas onde o user.role é 'ADMIN'
-    const expenseTransactions = await this.prismaService.transaction.groupBy({
-      by: ['category'],
-      _sum: {
-        amount: true,
-      },
+    const expenseTransactions = await this.prismaService.transaction.findMany({
       where: {
-        category: {
-          in: ['EXPENSE', 'WITHDRAW', 'TRANSFER'],
-        },
-        user: {
-          role: 'ADMIN',
-        },
+        bankAccountId: null,
+        category: { in: ['EXPENSE', 'WITHDRAW', 'TRANSFER'] },
+        OR: [
+          {
+            category: { in: ['EXPENSE', 'WITHDRAW'] },
+            user: {
+              role: 'ADMIN',
+            },
+          },
+          {
+            category: 'TRANSFER',
+            senderUser: {
+              role: 'ADMIN',
+            },
+          },
+        ],
       },
+      select: { amount: true },
     });
 
     const expenseTotal = expenseTransactions.reduce(
-      (acc, curr) => acc + (curr._sum.amount || 0),
+      (acc, curr) => acc + curr.amount,
       0,
     );
 
     const finalBalance = incomeTotal + saleTotal - expenseTotal;
 
     return finalBalance;
+  }
+
+  async calculateAccountsBalance(): Promise<
+    { bank: string; balance: number }[]
+  > {
+    const bankAccounts = await this.prismaService.bankAccount.findMany({
+      select: {
+        id: true,
+        bank: true,
+      },
+    });
+
+    const result = [];
+
+    for (const bankAccount of bankAccounts) {
+      // Calcular o total de receitas ('DEPOSIT' e 'INCOME')
+      const incomeTotal = await this.prismaService.transaction.groupBy({
+        by: ['category'],
+        _sum: { amount: true },
+        where: {
+          bankAccountId: bankAccount.id,
+          category: { in: ['DEPOSIT', 'INCOME'] },
+        },
+      });
+
+      const totalIncome = incomeTotal.reduce(
+        (acc, curr) => acc + (curr._sum.amount || 0),
+        0,
+      );
+
+      // Calcular o total de vendas ('SALE') excluindo 'DINHEIRO' e 'FIADO'
+      const saleTransactions = await this.prismaService.transaction.findMany({
+        where: {
+          bankAccountId: bankAccount.id,
+          category: 'SALE',
+          sales: {
+            some: {
+              paymentMethod: { notIn: ['DINHEIRO', 'FIADO'] },
+            },
+          },
+        },
+        select: { amount: true },
+      });
+
+      const saleTotal = saleTransactions.reduce(
+        (acc, curr) => acc + curr.amount,
+        0,
+      );
+
+      // Calcular o total de despesas ('EXPENSE', 'WITHDRAW', 'TRANSFER') para usuários 'ADMIN'
+      const expenseTransactions = await this.prismaService.transaction.findMany(
+        {
+          where: {
+            bankAccountId: bankAccount.id,
+            category: { in: ['EXPENSE', 'WITHDRAW', 'TRANSFER'] },
+            OR: [
+              {
+                category: { in: ['EXPENSE', 'WITHDRAW'] },
+                user: {
+                  role: 'ADMIN',
+                },
+              },
+              {
+                category: 'TRANSFER',
+                senderUser: {
+                  role: 'ADMIN',
+                },
+              },
+            ],
+          },
+          select: { amount: true },
+        },
+      );
+
+      const expenseTotal = expenseTransactions.reduce(
+        (acc, curr) => acc + curr.amount,
+        0,
+      );
+
+      // Calcular transferências de saída (originAccountId)
+      const outgoingTransfers =
+        await this.prismaService.accountTransfer.findMany({
+          where: { originAccountId: bankAccount.id },
+          select: { value: true },
+        });
+
+      const outgoingTotal = outgoingTransfers.reduce(
+        (acc, curr) => acc + curr.value,
+        0,
+      );
+
+      // Calcular transferências de entrada (destinationAccountId)
+      const incomingTransfers =
+        await this.prismaService.accountTransfer.findMany({
+          where: { destinationAccountId: bankAccount.id },
+          select: { value: true },
+        });
+
+      const incomingTotal = incomingTransfers.reduce(
+        (acc, curr) => acc + curr.value,
+        0,
+      );
+
+      // Calcular o saldo final
+      const balance =
+        totalIncome + saleTotal + incomingTotal - expenseTotal - outgoingTotal;
+
+      // Adicionar o resultado no array
+      result.push({
+        bank: bankAccount.bank,
+        balance,
+      });
+    }
+
+    return result;
   }
 
   async calculateDeliverymanBalance(deliverymanId: string): Promise<number> {
@@ -533,7 +658,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
       category: expense.customCategory,
       percentage:
         totalAmount > 0
-          ? Number(((expense._sum.amount / totalAmount) * 100)/100)
+          ? Number(((expense._sum.amount / totalAmount) * 100) / 100)
           : 0,
     }));
   }
@@ -547,7 +672,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
   }> {
     const adjustedEndDate = new Date(endDate);
     adjustedEndDate.setUTCHours(23, 59, 59, 999);
-  
+
     const salesFilter = {
       createdAt: {
         gte: startDate,
@@ -570,22 +695,22 @@ export class PrismaTransactionRepository extends TransactionRepository {
         total: true,
       },
     });
-  
+
     const salesByMonth = salesTransactions.reduce((acc, sale) => {
       const year = sale.createdAt.getFullYear();
       const month = sale.createdAt.getMonth() + 1;
       const key = `${year}-${month}`;
-  
+
       if (!acc[key]) {
         acc[key] = { year, month, total: 0 };
       }
-  
+
       acc[key].total += sale.total / 100 || 0;
       return acc;
     }, {} as Record<string, { year: number; month: number; total: number }>);
-  
+
     const totalSalesByMonth = Object.values(salesByMonth);
-  
+
     const expenseFilter = {
       category: TransactionCategory.EXPENSE,
       createdAt: {
@@ -594,7 +719,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
       },
       ...(deliverymanId && { userId: deliverymanId }),
     };
-  
+
     const expenseTransactions = await this.prismaService.transaction.findMany({
       where: expenseFilter,
       select: {
@@ -602,28 +727,28 @@ export class PrismaTransactionRepository extends TransactionRepository {
         amount: true,
       },
     });
-  
+
     const expensesByMonth = expenseTransactions.reduce((acc, transaction) => {
       const year = transaction.createdAt.getFullYear();
       const month = transaction.createdAt.getMonth() + 1;
       const key = `${year}-${month}`;
-  
+
       if (!acc[key]) {
         acc[key] = { year, month, total: 0 };
       }
       acc[key].total += transaction.amount / 100 || 0;
-  
+
       return acc;
     }, {} as Record<string, { year: number; month: number; total: number }>);
-  
+
     const totalExpensesByMonth = Object.values(expensesByMonth);
-  
+
     return {
       totalSales: totalSalesByMonth,
       totalExpenses: totalExpensesByMonth,
     };
   }
-  
+
   async getGrossProfit(
     startDate?: Date,
     endDate?: Date,
@@ -661,8 +786,14 @@ export class PrismaTransactionRepository extends TransactionRepository {
       },
     });
 
-    const salesTotal = totalSales.reduce((acc, sale) => acc + (sale._sum.amount || 0), 0);
-    const expensesTotal = totalExpenses.reduce((acc, expense) => acc + (expense._sum.amount || 0), 0);
+    const salesTotal = totalSales.reduce(
+      (acc, sale) => acc + (sale._sum.amount || 0),
+      0,
+    );
+    const expensesTotal = totalExpenses.reduce(
+      (acc, expense) => acc + (expense._sum.amount || 0),
+      0,
+    );
 
     const formattedSalesTotal = parseFloat((salesTotal / 100).toFixed(2));
     const formattedExpensesTotal = parseFloat((expensesTotal / 100).toFixed(2));

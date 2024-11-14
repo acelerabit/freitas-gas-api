@@ -7,6 +7,7 @@ import {
   Param,
   Put,
   Delete,
+  Patch,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { PaymentMethod } from '@prisma/client';
@@ -32,6 +33,7 @@ import { GetTotalMoneySalesByPaymentMethodFiado } from '@/application/use-cases/
 import { GetCustomersWithPositiveFiadoDebts } from '@/application/use-cases/sale/get-customer-with-sale-fiado';
 import { GetTotalSalesByPaymentMethodUseCase } from '@/application/use-cases/sale/get-total-sales-paymentMethod';
 import { GetTotalSalesByPaymentMethodForTodayUseCase } from '@/application/use-cases/sale/get-total-sales-paymentMethod-today';
+import { MarkAsPaid } from '@/application/use-cases/sale/mask-as-paid';
 
 @Controller('sales')
 export class SalesController {
@@ -51,6 +53,7 @@ export class SalesController {
     private getCustomersWithPositiveFiadoDebts: GetCustomersWithPositiveFiadoDebts,
     private readonly getTotalSalesByPaymentMethodUseCase: GetTotalSalesByPaymentMethodUseCase,
     private readonly getTotalSalesByPaymentMethodForTodayUseCase: GetTotalSalesByPaymentMethodForTodayUseCase,
+    private markAsPaid: MarkAsPaid,
   ) {}
 
   @Post()
@@ -85,11 +88,12 @@ export class SalesController {
     @Body()
     body: UpdateSaleBody,
   ) {
-    const { customerId, deliverymanId, paymentMethod, products } = body;
+    const { customerId, deliverymanId, paymentMethod, products, createdAt } =
+      body;
     await this.updateSaleUseCase.execute({
       saleId,
       customerId,
-      // deliverymanId,
+      createdAt,
       paymentMethod,
       products,
     });
@@ -290,6 +294,15 @@ export class SalesController {
       await this.getCustomersWithPositiveFiadoDebts.execute(pagination);
 
     return customersWithDebts;
+  }
+
+  @Patch('/mark-as-paid/:id')
+  async markPaid(@Param('id') id: string): Promise<void> {
+    await this.markAsPaid.execute({
+      id,
+    });
+
+    return;
   }
 
   @Auth(Role.ADMIN)

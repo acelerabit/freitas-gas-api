@@ -69,8 +69,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  notifications Notification[]
-  transactions  Transaction[]
+  notifications          Notification[]
+  transactions           Transaction[]
+  senderUserTransactions Transaction[]  @relation("sender_user")
 
   @@index([email])
   @@map("users")
@@ -172,9 +173,11 @@ model BankAccount {
   bank               String
   paymentsAssociated String[]
 
-  createdAt   DateTime      @default(now()) @map("created_at")
-  transaction Transaction[]
-  Debt        Debt[]
+  createdAt                  DateTime          @default(now()) @map("created_at")
+  transaction                Transaction[]
+  Debt                       Debt[]
+  accountTransferOrigin      AccountTransfer[]
+  accountTransferDestination AccountTransfer[] @relation("destination_account")
 }
 
 model Collect {
@@ -197,7 +200,8 @@ model Sales {
   customer   Customer @relation(fields: [customerId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   customerId String   @map("customer_id")
 
-  returned Boolean @default(false)
+  returned Boolean  @default(false)
+  paid     Boolean?
 
   transaction   Transaction? @relation(fields: [transactionId], references: [id])
   transactionId String?
@@ -236,6 +240,9 @@ model Transaction {
   user   User   @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   userId String @map("user_id")
 
+  senderUser   User?   @relation("sender_user", fields: [senderUserId], references: [id])
+  senderUserId String? @map("sender_user_id")
+
   referenceId    String?
   customCategory String?
 
@@ -245,6 +252,23 @@ model Transaction {
   sales Sales[]
 
   @@map("transactions")
+}
+
+model AccountTransfer {
+  id String @id @default(uuid())
+
+  originAccount   BankAccount? @relation(fields: [originAccountId], references: [id])
+  originAccountId String?
+
+  destinationAccount   BankAccount? @relation("destination_account", fields: [destinationAccountId], references: [id])
+  destinationAccountId String?
+
+  value Int
+  type  String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("account_transfers")
 }
 
 model Log {

@@ -25,4 +25,8 @@ export class UpdateSaleBody {
   @IsOptional()
   @IsNotEmpty()
   paymentMethod: string;
+
+  @IsOptional()
+  @IsNotEmpty()
+  createdAt?: Date;
 }
