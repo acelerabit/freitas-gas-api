@@ -13,4 +13,4 @@ RUN npx run build
 
 EXPOSE 5000
 
-CMD [ "node", "dist/src/main" ]
+CMD [ "node", "build/src/main" ]
