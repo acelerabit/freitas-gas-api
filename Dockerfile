@@ -9,7 +9,7 @@ RUN yarn
 
 RUN yarn global add @nestjs/cli
 
-RUN npx run build
+RUN yarn build
 
 EXPOSE 5000
 
