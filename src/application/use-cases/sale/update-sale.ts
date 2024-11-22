@@ -115,11 +115,26 @@ export class UpdateSaleUseCase {
     await this.salesRepository.update(sale);
 
     for (const product of sale.products) {
-      await this.salesRepository.updateStock(
-        product.id,
-        product.quantity,
-        product.status,
-      );
+      const originalProduct = sale.products.find((p) => p.id === product.id);
+
+      // Atualiza o estoque apenas se a quantidade ou status mudou
+      if (
+        !originalProduct ||
+        originalProduct.quantity !== product.quantity ||
+        originalProduct.status !== product.status
+      ) {
+        await this.salesRepository.updateStock(
+          product.id,
+          product.quantity,
+          product.status,
+        );
+      }
+
+      // await this.salesRepository.updateStock(
+      //   product.id,
+      //   product.quantity,
+      //   product.status,
+      // );
     }
 
     const saleProducts = sale.products.map((product) => ({
