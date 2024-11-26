@@ -71,15 +71,22 @@ export class AccountTransferController {
     query: {
       page?: string;
       itemsPerPage?: string;
+      startDate?: string;
+      endDate?: string;
     },
   ) {
-    const { itemsPerPage, page } = query;
+    const { itemsPerPage, page, startDate, endDate } = query;
+
+    const startDateObj = startDate ? new Date(startDate) : undefined;
+    const endDateObj = endDate ? new Date(endDate) : undefined;
 
     const { accountTransfers } = await this.fetchAccountTransfers.execute({
       pagination: {
         itemsPerPage: Number(itemsPerPage),
         page: Number(page),
       },
+      startDate: startDateObj,
+      endDate: endDateObj,
     });
 
     return accountTransfers.map(AccountTransfersPresenters.toHTTP);

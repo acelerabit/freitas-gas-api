@@ -206,16 +206,13 @@ export class PrismaTransactionRepository extends TransactionRepository {
   ): Promise<Transaction[]> {
     const whereCondition: any = { category: 'DEPOSIT' };
 
-    // Ajustando o filtro de data se startDate for fornecido
     if (startDate) {
       whereCondition.createdAt = {
-        gte: startDate, // "greater than or equal to" (maior ou igual)
+        gte: startDate,
       };
     }
 
-    // Ajustando o filtro de data se endDate for fornecido
     if (endDate) {
-      // Ajustando a data final para o final do dia (23:59:59)
       const adjustedEndDate = new Date(endDate);
       adjustedEndDate.setHours(23, 59, 59);
 

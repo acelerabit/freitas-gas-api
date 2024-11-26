@@ -24,12 +24,36 @@ export class PrismaAccountTransfersRepository
     return accountTransfers.map(PrismaAccountTransfersMapper.toDomain);
   }
 
-  async findAll(pagination: PaginationParams): Promise<AccountTransfer[]> {
+  async findAll(
+    pagination: PaginationParams,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<AccountTransfer[]> {
     if (!pagination.itemsPerPage && !pagination.page) {
       return [];
     }
 
+    const whereCondition: any = {};
+
+    if (startDate) {
+      whereCondition.createdAt = {
+        gte: startDate,
+      };
+    }
+
+    if (endDate) {
+      const adjustedEndDate = new Date(endDate);
+      adjustedEndDate.setHours(23, 59, 59);
+
+      if (whereCondition.createdAt) {
+        whereCondition.createdAt.lte = adjustedEndDate;
+      } else {
+        whereCondition.createdAt = { lte: adjustedEndDate };
+      }
+    }
+
     const accountTransfers = await this.prismaService.accountTransfer.findMany({
+      where: whereCondition,
       take: Number(pagination.itemsPerPage),
       skip: (pagination.page - 1) * Number(pagination.itemsPerPage),
       orderBy: {
@@ -40,6 +64,7 @@ export class PrismaAccountTransfersRepository
         originAccount: true,
       },
     });
+
     return accountTransfers.map(PrismaAccountTransfersMapper.toDomain);
   }
 
