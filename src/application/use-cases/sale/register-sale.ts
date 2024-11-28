@@ -52,6 +52,21 @@ export class RegisterSaleUseCase {
       );
     }
 
+    const isToPayAfter = sale.paymentMethod === 'FIADO';
+
+    if (isToPayAfter && customer.name === 'Cliente Genérico') {
+      throw new BadRequestException(
+        'Não é permitido utilizar o cliente "Cliente Genérico" para vendas à receber.',
+        {
+          cause: new Error(
+            'Não é permitido utilizar o cliente "Cliente Genérico" para vendas à receber.',
+          ),
+          description:
+            'Não é permitido utilizar o cliente "Cliente Genérico" para vendas à receber.',
+        },
+      );
+    }
+
     const deliveryman = await this.usersRepository.findById(sale.deliverymanId);
 
     if (!deliveryman) {
