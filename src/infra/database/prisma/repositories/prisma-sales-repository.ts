@@ -1,5 +1,10 @@
 import { PrismaSalesMapper } from './../mappers/sale.mapper';
-import { BottleStatus, PaymentMethod } from '@prisma/client';
+import {
+  BottleStatus,
+  PaymentMethod,
+  TransactionCategory,
+  TransactionType,
+} from '@prisma/client';
 import {
   SalesRepository,
   SortType,
@@ -10,12 +15,30 @@ import { PrismaService } from '../prisma.service';
 import { PaginationParams } from '@/@shared/pagination-interface';
 import { DateService } from '@/infra/dates/date.service';
 import { fCurrencyIntlBRL } from '@/utils/formatCurrency';
+import { TransactionRepository } from '@/application/repositories/transaction-repository';
+import { CustomersRepository } from '@/application/repositories/customer-repository';
+import { UsersRepository } from '@/application/repositories/user-repository';
+import { ProductRepository } from '@/application/repositories/product-repository';
+import { CustomerWithComodatosRepository } from '@/application/repositories/customer-with-comodato-repository';
+import { BankAccountsRepository } from '@/application/repositories/bank-repositry';
+import { Product } from '@/application/entities/product';
+import { Customer } from '@/application/entities/customer';
+import { User } from '@/application/entities/user';
+import { Transaction } from '@/application/entities/transaction';
+import { CustomerWithComodato } from '@/application/entities/customers-with-comodato';
 
 @Injectable()
 export class PrismaSalesRepository extends SalesRepository {
   constructor(
     private prismaService: PrismaService,
     private dateService: DateService,
+    private readonly salesRepository: SalesRepository,
+    private readonly transactionRepository: TransactionRepository,
+    private readonly customerRepository: CustomersRepository,
+    private readonly usersRepository: UsersRepository,
+    private productRepository: ProductRepository,
+    private customerWithComodatoRepository: CustomerWithComodatosRepository,
+    private bankRepository: BankAccountsRepository,
   ) {
     super();
   }
@@ -32,6 +55,146 @@ export class PrismaSalesRepository extends SalesRepository {
       },
     });
     return createdSale.id;
+  }
+
+  async saveSale(sale: Sale, customer: Customer, deliveryman: User) {
+    await this.prismaService.$transaction(async (prisma) => {
+      // Formatar os produtos
+      const formatProducts = await Promise.all(
+        sale.products.map(async (product) => {
+          const getProduct = await prisma.product.findFirst({
+            where: { type: product.type, status: product.status },
+          });
+
+          if (getProduct) {
+            return new Product(
+              {
+                price: product.price * 100,
+                quantity: product.quantity,
+                status: product.status,
+                type: product.type,
+              },
+              getProduct.id,
+            );
+          }
+
+          return null; // Retorne null para valores não encontrados
+        }),
+      );
+
+      const saleWithCustomerId = new Sale(sale.customerId, {
+        deliverymanId: sale.deliverymanId,
+        paymentMethod: sale.paymentMethod,
+        products: formatProducts.filter((product) => product !== null),
+        totalAmount: sale.totalAmount,
+        type: sale.type,
+        customer: customer,
+        deliveryman: deliveryman,
+      });
+
+      // Atualizar estoque dos produtos
+      for (const product of saleWithCustomerId.products) {
+        await this.salesRepository.updateStock(
+          product.id,
+          product.quantity,
+          product.status,
+        );
+      }
+
+      // Calcular total e criar venda
+      saleWithCustomerId.calculateTotal();
+
+      const saleId = await this.salesRepository.createSale(saleWithCustomerId);
+
+      // Criar os produtos associados à venda
+      const saleProducts = saleWithCustomerId.products.map((product) => ({
+        id: product.id,
+        salePrice: product.price,
+        typeSale: product.status,
+        quantity: product.quantity,
+      }));
+
+      await this.salesRepository.createSalesProducts(saleId, saleProducts);
+
+      // Obter conta bancária associada ao método de pagamento
+      const bankAccountToThisPayment = await prisma.bankAccount.findFirst({
+        where: { paymentMethods: { has: sale.paymentMethod } },
+      });
+
+      // Criar transação
+      const transaction = new Transaction({
+        amount: saleWithCustomerId.totalAmount,
+        transactionType: TransactionType.ENTRY,
+        mainAccount: false,
+        category: TransactionCategory.SALE,
+        userId: saleWithCustomerId.deliverymanId,
+        referenceId: saleId,
+        bankAccountId: bankAccountToThisPayment?.id ?? null,
+      });
+
+      await this.transactionRepository.createTransaction(transaction);
+
+      // Atualizar a venda com o ID da transação
+      saleWithCustomerId.transactionId = transaction.id;
+      saleWithCustomerId.deliverymanId = transaction.userId;
+
+      await this.salesRepository.update(saleWithCustomerId);
+
+      // Atualizar saldo de crédito, se necessário
+      if (saleWithCustomerId.paymentMethod === 'FIADO') {
+        customer.creditBalance += saleWithCustomerId.totalAmount;
+        await this.customerRepository.update(customer);
+      }
+
+      // Gerar termo de comodato, se aplicável
+      if (saleWithCustomerId.isComodato()) {
+        this.generateComodatoTerm(saleWithCustomerId);
+      }
+
+      // Verificar e processar produtos em comodato
+      const hasComodato = saleWithCustomerId.products.some(
+        (product) => product.status === 'COMODATO',
+      );
+
+      if (hasComodato) {
+        const comodatoQuantity = saleWithCustomerId.products
+          .filter((product) => product.status === 'COMODATO')
+          .reduce((acc, product) => acc + product.quantity, 0);
+
+        const comodatoProducts = saleWithCustomerId.products.filter(
+          (product) => product.status === 'COMODATO',
+        );
+
+        const clientHasComodato = await prisma.customerWithComodato.findFirst({
+          where: { customerId: customer.id },
+        });
+
+        if (!clientHasComodato) {
+          const customerWithComodato = CustomerWithComodato.create({
+            customerId: customer.id,
+            quantity: comodatoQuantity,
+          });
+
+          await this.customerWithComodatoRepository.create(
+            customerWithComodato,
+          );
+
+          await this.customerWithComodatoRepository.saveProducts(
+            comodatoProducts,
+            customerWithComodato.id,
+          );
+        } else {
+          clientHasComodato.quantity += comodatoQuantity;
+
+          await this.customerWithComodatoRepository.updateProducts(
+            comodatoProducts,
+            clientHasComodato.id,
+          );
+
+          await this.customerWithComodatoRepository.update(clientHasComodato);
+        }
+      }
+    });
   }
 
   async createSalesProducts(
