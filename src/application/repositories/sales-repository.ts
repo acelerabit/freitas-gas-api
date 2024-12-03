@@ -2,6 +2,8 @@ import { Product } from '@/application/entities/product';
 import { PaginationParams } from '@/@shared/pagination-interface';
 import { Sale } from '../entities/sale';
 import { BottleStatus, PaymentMethod } from '@prisma/client';
+import { Customer } from '../entities/customer';
+import { User } from '../entities/user';
 
 export type SortType =
   | 'createdAt'
@@ -15,6 +17,11 @@ export type SortType =
 
 export abstract class SalesRepository {
   abstract createSale(sale: Sale): Promise<string>;
+  abstract saveSale(
+    sale: Sale,
+    customer: Customer,
+    deliveryman: User,
+  ): Promise<void>;
   abstract markAsPaid(id: string, bankAccountId: string): Promise<void>;
   abstract updateStock(
     productId: string,

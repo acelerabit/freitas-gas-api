@@ -32,10 +32,8 @@ export class PrismaSalesRepository extends SalesRepository {
   constructor(
     private prismaService: PrismaService,
     private dateService: DateService,
-    private readonly salesRepository: SalesRepository,
     private readonly transactionRepository: TransactionRepository,
     private readonly customerRepository: CustomersRepository,
-    private readonly usersRepository: UsersRepository,
     private productRepository: ProductRepository,
     private customerWithComodatoRepository: CustomerWithComodatosRepository,
     private bankRepository: BankAccountsRepository,
@@ -62,9 +60,10 @@ export class PrismaSalesRepository extends SalesRepository {
       // Formatar os produtos
       const formatProducts = await Promise.all(
         sale.products.map(async (product) => {
-          const getProduct = await prisma.product.findFirst({
-            where: { type: product.type, status: product.status },
-          });
+          const getProduct = await this.productRepository.findByTypeAndStatus(
+            product.type,
+            product.status,
+          );
 
           if (getProduct) {
             return new Product(
@@ -92,21 +91,14 @@ export class PrismaSalesRepository extends SalesRepository {
         deliveryman: deliveryman,
       });
 
-      // Atualizar estoque dos produtos
       for (const product of saleWithCustomerId.products) {
-        await this.salesRepository.updateStock(
-          product.id,
-          product.quantity,
-          product.status,
-        );
+        await this.updateStock(product.id, product.quantity, product.status);
       }
 
-      // Calcular total e criar venda
       saleWithCustomerId.calculateTotal();
 
-      const saleId = await this.salesRepository.createSale(saleWithCustomerId);
+      const saleId = await this.createSale(saleWithCustomerId);
 
-      // Criar os produtos associados à venda
       const saleProducts = saleWithCustomerId.products.map((product) => ({
         id: product.id,
         salePrice: product.price,
@@ -114,17 +106,16 @@ export class PrismaSalesRepository extends SalesRepository {
         quantity: product.quantity,
       }));
 
-      await this.salesRepository.createSalesProducts(saleId, saleProducts);
+      await this.createSalesProducts(saleId, saleProducts);
 
-      // Obter conta bancária associada ao método de pagamento
-      const bankAccountToThisPayment = await prisma.bankAccount.findFirst({
-        where: { paymentMethods: { has: sale.paymentMethod } },
-      });
+      const bankAccountToThisPayment =
+        await this.bankRepository.accountToThisPaymentMethod(
+          sale.paymentMethod,
+        );
 
-      // Criar transação
       const transaction = new Transaction({
         amount: saleWithCustomerId.totalAmount,
-        transactionType: TransactionType.ENTRY,
+        transactionType: TransactionType.EXIT,
         mainAccount: false,
         category: TransactionCategory.SALE,
         userId: saleWithCustomerId.deliverymanId,
@@ -134,24 +125,16 @@ export class PrismaSalesRepository extends SalesRepository {
 
       await this.transactionRepository.createTransaction(transaction);
 
-      // Atualizar a venda com o ID da transação
       saleWithCustomerId.transactionId = transaction.id;
       saleWithCustomerId.deliverymanId = transaction.userId;
 
-      await this.salesRepository.update(saleWithCustomerId);
+      await this.update(saleWithCustomerId);
 
-      // Atualizar saldo de crédito, se necessário
       if (saleWithCustomerId.paymentMethod === 'FIADO') {
         customer.creditBalance += saleWithCustomerId.totalAmount;
         await this.customerRepository.update(customer);
       }
 
-      // Gerar termo de comodato, se aplicável
-      if (saleWithCustomerId.isComodato()) {
-        this.generateComodatoTerm(saleWithCustomerId);
-      }
-
-      // Verificar e processar produtos em comodato
       const hasComodato = saleWithCustomerId.products.some(
         (product) => product.status === 'COMODATO',
       );
@@ -165,9 +148,8 @@ export class PrismaSalesRepository extends SalesRepository {
           (product) => product.status === 'COMODATO',
         );
 
-        const clientHasComodato = await prisma.customerWithComodato.findFirst({
-          where: { customerId: customer.id },
-        });
+        const clientHasComodato =
+          await this.customerWithComodatoRepository.findByCustomer(customer.id);
 
         if (!clientHasComodato) {
           const customerWithComodato = CustomerWithComodato.create({
@@ -186,6 +168,7 @@ export class PrismaSalesRepository extends SalesRepository {
         } else {
           clientHasComodato.quantity += comodatoQuantity;
 
+          // se ele ja tem atualizar a quantidade, se não criar o prosuctComodato
           await this.customerWithComodatoRepository.updateProducts(
             comodatoProducts,
             clientHasComodato.id,
@@ -777,6 +760,30 @@ export class PrismaSalesRepository extends SalesRepository {
   }
 
   async deleteSale(saleId: string): Promise<void> {
+    const sale = await this.prismaService.sales.findUnique({
+      where: {
+        id: saleId,
+      },
+      include: {
+        products: true,
+      },
+    });
+
+    const productUpdates = sale.products.map(async (product) => {
+      return this.prismaService.product.update({
+        where: {
+          id: product.productId,
+        },
+        data: {
+          quantity: {
+            increment: product.quantity,
+          },
+        },
+      });
+    });
+
+    await Promise.all(productUpdates);
+
     await this.prismaService.transaction.deleteMany({
       where: {
         sales: {
@@ -801,6 +808,15 @@ export class PrismaSalesRepository extends SalesRepository {
       },
       data: {
         ...toPrisma,
+      },
+    });
+
+    await this.prismaService.transaction.update({
+      where: {
+        id: sale.transactionId,
+      },
+      data: {
+        createdAt: sale.createdAt,
       },
     });
   }

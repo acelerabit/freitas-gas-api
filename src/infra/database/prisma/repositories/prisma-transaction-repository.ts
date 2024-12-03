@@ -578,6 +578,9 @@ export class PrismaTransactionRepository extends TransactionRepository {
     const existingTransaction = await this.prismaService.transaction.findUnique(
       {
         where: { id: transaction.id },
+        include: {
+          sales: true,
+        },
       },
     );
 
@@ -585,7 +588,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
       throw new Error(`Transação com ID ${transaction.id} não encontrada.`);
     }
 
-    await this.prismaService.transaction.update({
+    const transactionUpdated = await this.prismaService.transaction.update({
       where: {
         id: transaction.id,
       },
@@ -593,6 +596,19 @@ export class PrismaTransactionRepository extends TransactionRepository {
         ...toPrisma,
       },
     });
+
+    if (existingTransaction.sales.length > 0) {
+      await this.prismaService.sales.updateMany({
+        where: {
+          id: {
+            in: existingTransaction.sales.map((sale) => sale.id),
+          },
+        },
+        data: {
+          createdAt: transactionUpdated.createdAt,
+        },
+      });
+    }
   }
 
   async delete(id: string): Promise<void> {
