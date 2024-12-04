@@ -10,7 +10,11 @@ import {
   SortType,
 } from '../../../../application/repositories/sales-repository';
 import { Sale } from '../../../../application/entities/sale';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  applyDecorators,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { PaginationParams } from '@/@shared/pagination-interface';
 import { DateService } from '@/infra/dates/date.service';
@@ -759,6 +763,168 @@ export class PrismaSalesRepository extends SalesRepository {
     return raw.map(PrismaSalesMapper.toDomain);
   }
 
+  async revertStock(
+    productId: string,
+    quantity: number,
+    status: BottleStatus,
+  ): Promise<void> {
+    const product = await this.prismaService.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      throw new BadRequestException('Produto não encontrado', {
+        cause: new Error('Produto não encontrado'),
+        description: 'Produto não encontrado',
+      });
+    }
+
+    if (status === 'FULL') {
+      const newStock = product.quantity + quantity;
+
+      await this.prismaService.product.update({
+        where: { id: productId },
+        data: { quantity: newStock },
+      });
+
+      return;
+    }
+
+    if (status === 'EMPTY') {
+      const productFull = await this.prismaService.product.findFirst({
+        where: {
+          type: product.type,
+          status: 'FULL',
+        },
+      });
+
+      const newStockFull = productFull.quantity + quantity;
+
+      if (newStockFull < 0) {
+        throw new BadRequestException(
+          'Estoque de bujão cheio insuficiente para fazer a troca',
+          {
+            cause: new Error(
+              'Estoque de bujão cheio insuficiente para fazer a troca',
+            ),
+            description:
+              'Estoque de bujão cheio insuficiente para fazer a troca',
+          },
+        );
+      }
+
+      const newStock = product.quantity - quantity;
+
+      if (newStock < 0) {
+        throw new BadRequestException('Estoque insuficiente', {
+          cause: new Error('Estoque insuficiente'),
+          description: 'Estoque insuficiente',
+        });
+      }
+
+      await this.prismaService.product.update({
+        where: { id: productFull.id },
+        data: { quantity: newStockFull },
+      });
+
+      await this.prismaService.product.update({
+        where: { id: productId },
+        data: { quantity: newStock },
+      });
+
+      return;
+    }
+
+    if (status === 'COMODATO') {
+      const productFull = await this.prismaService.product.findFirst({
+        where: {
+          type: product.type,
+          status: 'FULL',
+        },
+      });
+
+      const newStockFull = productFull.quantity + quantity;
+
+      if (newStockFull < 0) {
+        throw new BadRequestException('Estoque insuficiente', {
+          cause: new Error('Estoque insuficiente'),
+          description: 'Estoque insuficiente',
+        });
+      }
+
+      const newStock = product.quantity - quantity;
+
+      if (newStock < 0) {
+        throw new BadRequestException('Estoque insuficiente', {
+          cause: new Error('Estoque insuficiente'),
+          description: 'Estoque insuficiente',
+        });
+      }
+
+      await this.prismaService.product.update({
+        where: { id: productFull.id },
+        data: { quantity: newStockFull },
+      });
+
+      await this.prismaService.product.update({
+        where: { id: productId },
+        data: { quantity: newStock },
+      });
+
+      return;
+    }
+  }
+
+  async revertComodato(
+    customerId: string,
+    quantity: number,
+    typeSale: BottleStatus,
+    productId: string,
+  ) {
+    const raw = await this.prismaService.customerWithComodato.findFirst({
+      where: {
+        customerId,
+      },
+      include: {
+        products: {
+          where: {
+            AND: [
+              {
+                productId,
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    const updated = await this.prismaService.customerWithComodato.update({
+      where: {
+        id: raw.id,
+      },
+      data: {
+        quantity: {
+          decrement: quantity,
+        },
+        products: {
+          update: {
+            where: {
+              id: raw.products[0].id,
+            },
+            data: {
+              quantity: {
+                decrement: quantity,
+              },
+            },
+          },
+        },
+      },
+      include: {
+        products: true,
+      },
+    });
+  }
+
   async deleteSale(saleId: string): Promise<void> {
     const sale = await this.prismaService.sales.findUnique({
       where: {
@@ -769,20 +935,24 @@ export class PrismaSalesRepository extends SalesRepository {
       },
     });
 
-    const productUpdates = sale.products.map(async (product) => {
-      return this.prismaService.product.update({
-        where: {
-          id: product.productId,
-        },
-        data: {
-          quantity: {
-            increment: product.quantity,
-          },
-        },
-      });
-    });
+    await Promise.all(
+      sale.products.map(async (product) => {
+        await this.revertStock(
+          product.productId,
+          product.quantity,
+          product.typeSale,
+        );
 
-    await Promise.all(productUpdates);
+        if (product.typeSale === 'COMODATO') {
+          await this.revertComodato(
+            sale.customerId,
+            product.quantity,
+            product.typeSale,
+            product.productId,
+          );
+        }
+      }),
+    );
 
     await this.prismaService.transaction.deleteMany({
       where: {
