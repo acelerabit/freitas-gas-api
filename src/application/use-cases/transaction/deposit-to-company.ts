@@ -14,6 +14,7 @@ interface DepositToCompanyRequest {
   amount: number;
   depositDate: Date;
   bank?: string;
+  bankAccountId?: string;
 }
 
 @Injectable()
@@ -32,6 +33,7 @@ export class DepositToCompanyUseCase {
     deliverymanId,
     depositDate,
     bank,
+    bankAccountId,
   }: DepositToCompanyRequest): Promise<void> {
     const deliveryman = await this.usersRepository.findById(deliverymanId);
 
@@ -74,6 +76,7 @@ export class DepositToCompanyUseCase {
       userId: deliverymanId,
       depositDate,
       bank,
+      bankAccountId,
     });
 
     // zerar saldo do entregador

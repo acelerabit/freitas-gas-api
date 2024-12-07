@@ -550,6 +550,17 @@ export class PrismaTransactionRepository extends TransactionRepository {
       return acc + (curr.amount || 0);
     }, 0);
 
+    const transferTransactions = await this.prismaService.transaction.findMany({
+      where: {
+        category: 'TRANSFER',
+        userId: deliverymanId,
+      },
+    });
+
+    const transferTotal = transferTransactions.reduce((acc, curr) => {
+      return acc + (curr.amount || 0);
+    }, 0);
+
     const expenseTransactions = await this.prismaService.transaction.findMany({
       where: {
         category: {
@@ -563,7 +574,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
       return acc + (curr.amount || 0);
     }, 0);
 
-    const finalBalance = deliveryman.accountAmount + saleTotal - expenseTotal;
+    const finalBalance = saleTotal + transferTotal - expenseTotal;
 
     return finalBalance;
   }
