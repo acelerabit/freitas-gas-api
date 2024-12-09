@@ -641,6 +641,81 @@ export class PrismaSalesRepository extends SalesRepository {
     return total._sum.amount || 0;
   }
 
+  async getTotalBalanceByDeliverymanYesterday(
+    deliverymanId: string,
+  ): Promise<number> {
+    const { startOfYesterday, endOfYesterday } =
+      await this.dateService.startAndEndOfYesterday();
+
+    const deliveryman = await this.prismaService.user.findUnique({
+      where: {
+        id: deliverymanId,
+      },
+    });
+
+    if (!deliveryman) {
+      return 0;
+    }
+
+    const saleTransactions = await this.prismaService.transaction.findMany({
+      where: {
+        category: 'SALE',
+        userId: deliverymanId,
+        sales: {
+          some: {
+            paymentMethod: {
+              equals: 'DINHEIRO',
+            },
+          },
+        },
+        createdAt: {
+          gte: startOfYesterday,
+          lte: endOfYesterday,
+        },
+      },
+    });
+
+    const saleTotal = saleTransactions.reduce((acc, curr) => {
+      return acc + (curr.amount || 0);
+    }, 0);
+
+    const transferTransactions = await this.prismaService.transaction.findMany({
+      where: {
+        category: 'TRANSFER',
+        userId: deliverymanId,
+        createdAt: {
+          gte: startOfYesterday,
+          lte: endOfYesterday,
+        },
+      },
+    });
+
+    const transferTotal = transferTransactions.reduce((acc, curr) => {
+      return acc + (curr.amount || 0);
+    }, 0);
+
+    const expenseTransactions = await this.prismaService.transaction.findMany({
+      where: {
+        category: {
+          in: ['EXPENSE', 'DEPOSIT'],
+        },
+        userId: deliverymanId,
+        createdAt: {
+          gte: startOfYesterday,
+          lte: endOfYesterday,
+        },
+      },
+    });
+
+    const expenseTotal = expenseTransactions.reduce((acc, curr) => {
+      return acc + (curr.amount || 0);
+    }, 0);
+
+    const finalBalance = saleTotal + transferTotal - expenseTotal;
+
+    return finalBalance;
+  }
+
   async getTotalMoneySalesByDeliverymanYesterday(
     deliverymanId: string,
   ): Promise<number> {
@@ -970,6 +1045,50 @@ export class PrismaSalesRepository extends SalesRepository {
   }
 
   async update(sale: Sale): Promise<void> {
+    const dbSale = await this.prismaService.sales.findUnique({
+      where: {
+        id: sale.id,
+      },
+    });
+
+    if (dbSale.paymentMethod !== sale.paymentMethod) {
+      const toPrisma = PrismaSalesMapper.toPrisma(sale);
+
+      await this.prismaService.sales.update({
+        where: {
+          id: sale.id,
+        },
+        data: {
+          ...toPrisma,
+        },
+      });
+
+      const result = await this.prismaService.bankAccount.findFirst({
+        where: {
+          paymentsAssociated: {
+            hasSome: sale.paymentMethod,
+          },
+        },
+      });
+
+      if (!result) {
+        return null;
+      }
+
+      await this.prismaService.transaction.update({
+        where: {
+          id: sale.transactionId,
+        },
+        data: {
+          createdAt: sale.createdAt,
+          bankAccountId: result.id,
+          bank: result.bank,
+        },
+      });
+
+      return;
+    }
+
     const toPrisma = PrismaSalesMapper.toPrisma(sale);
 
     await this.prismaService.sales.update({

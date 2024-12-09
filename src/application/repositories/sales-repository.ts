@@ -82,6 +82,9 @@ export abstract class SalesRepository {
   abstract getTotalMoneySalesByDeliveryman(
     deliverymanId: string,
   ): Promise<number>;
+  abstract getTotalBalanceByDeliverymanYesterday(
+    deliverymanId: string,
+  ): Promise<number>;
   abstract getTotalMoneySalesByDeliverymanYesterday(
     deliverymanId: string,
   ): Promise<number>;

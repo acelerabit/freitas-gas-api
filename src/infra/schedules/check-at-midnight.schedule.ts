@@ -27,7 +27,7 @@ export class CheckAtMidnight {
     await Promise.all(
       deliverymans.map(async (deliveryman) => {
         const revenuesInMoneyYesterday =
-          await this.salesRepository.getTotalMoneySalesByDeliverymanYesterday(
+          await this.salesRepository.getTotalBalanceByDeliverymanYesterday(
             deliveryman.id,
           );
         const depositsByDeliverymanYesterday =
@@ -43,7 +43,7 @@ export class CheckAtMidnight {
             deliveryman.email
           } deveria ter informado um depósito no dia ${formatDateWithHours(
             yesterday,
-          )} no entanto não o fez, o saldo de vendas em dinheiro em sua conta era de ${fCurrencyIntlBRL(
+          )} no entanto não o fez, o saldo em dinheiro em sua conta era de ${fCurrencyIntlBRL(
             revenuesInMoneyYesterday / 100,
           )}`;
 

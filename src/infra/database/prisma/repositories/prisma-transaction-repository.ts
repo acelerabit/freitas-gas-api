@@ -522,6 +522,9 @@ export class PrismaTransactionRepository extends TransactionRepository {
   }
 
   async calculateDeliverymanBalance(deliverymanId: string): Promise<number> {
+    const { startOfToday, endOfToday } =
+      await this.dateService.startAndEndOfToday();
+
     const deliveryman = await this.prismaService.user.findUnique({
       where: {
         id: deliverymanId,
@@ -543,6 +546,10 @@ export class PrismaTransactionRepository extends TransactionRepository {
             },
           },
         },
+        createdAt: {
+          gte: startOfToday,
+          lte: endOfToday,
+        },
       },
     });
 
@@ -554,6 +561,10 @@ export class PrismaTransactionRepository extends TransactionRepository {
       where: {
         category: 'TRANSFER',
         userId: deliverymanId,
+        createdAt: {
+          gte: startOfToday,
+          lte: endOfToday,
+        },
       },
     });
 
@@ -567,6 +578,10 @@ export class PrismaTransactionRepository extends TransactionRepository {
           in: ['EXPENSE', 'DEPOSIT'],
         },
         userId: deliverymanId,
+        createdAt: {
+          gte: startOfToday,
+          lte: endOfToday,
+        },
       },
     });
 

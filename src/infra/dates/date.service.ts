@@ -46,6 +46,16 @@ export class DateService {
     return dayjs().subtract(1, 'day').format('YYYY-MM-DD HH:mm:ss');
   }
 
+  startAndEndOfToday() {
+    const startOfToday = dayjs().startOf('day').toDate(); // Início do dia atual
+    const endOfToday = dayjs().endOf('day').toDate();
+
+    return {
+      startOfToday,
+      endOfToday,
+    };
+  }
+
   startAndEndOfYesterday() {
     const startOfYesterday = dayjs().subtract(1, 'day').startOf('day').toDate(); // Início do dia atual
     const endOfYesterday = dayjs().subtract(1, 'day').endOf('day').toDate();
