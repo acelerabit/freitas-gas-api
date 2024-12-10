@@ -61,7 +61,6 @@ export class PrismaSalesRepository extends SalesRepository {
 
   async saveSale(sale: Sale, customer: Customer, deliveryman: User) {
     await this.prismaService.$transaction(async (prisma) => {
-      // Formatar os produtos
       const formatProducts = await Promise.all(
         sale.products.map(async (product) => {
           const getProduct = await this.productRepository.findByTypeAndStatus(
@@ -81,7 +80,7 @@ export class PrismaSalesRepository extends SalesRepository {
             );
           }
 
-          return null; // Retorne null para valores não encontrados
+          return null;
         }),
       );
 
@@ -172,7 +171,6 @@ export class PrismaSalesRepository extends SalesRepository {
         } else {
           clientHasComodato.quantity += comodatoQuantity;
 
-          // se ele ja tem atualizar a quantidade, se não criar o prosuctComodato
           await this.customerWithComodatoRepository.updateProducts(
             comodatoProducts,
             clientHasComodato.id,
@@ -443,11 +441,17 @@ export class PrismaSalesRepository extends SalesRepository {
       }
 
       if (filterParams.startDate && filterParams.endDate) {
+        const startDate = new Date(filterParams.startDate);
+        const endDate = new Date(filterParams.endDate);
+
+        startDate.setUTCHours(0, 0, 0, 0);
+        endDate.setUTCHours(23, 59, 59, 999);
+
         whereFilter = {
           ...whereFilter,
           createdAt: {
-            gte: new Date(filterParams.startDate),
-            lte: new Date(filterParams.endDate),
+            gte: startDate,
+            lte: endDate,
           },
         };
       }
@@ -776,7 +780,7 @@ export class PrismaSalesRepository extends SalesRepository {
             },
           },
           include: {
-            product: true, // Inclui os detalhes do produto
+            product: true,
           },
         },
         transaction: {
