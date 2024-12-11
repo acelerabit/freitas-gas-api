@@ -84,4 +84,10 @@ export abstract class TransactionRepository {
     endDate?: Date,
     deliverymanId?: string,
   ): Promise<number>;
+  abstract getDeliverymenCashBalances(pagination: PaginationParams): Promise<
+    {
+      name: string;
+      cashBalance: number;
+    }[]
+  >;
 }

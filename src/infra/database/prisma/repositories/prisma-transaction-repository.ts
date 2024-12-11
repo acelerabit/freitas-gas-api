@@ -593,6 +593,57 @@ export class PrismaTransactionRepository extends TransactionRepository {
 
     return finalBalance;
   }
+  async getDeliverymenCashBalances(
+    pagination: PaginationParams
+  ): Promise<{ name: string; cashBalance: number }[]> {
+    const { startOfToday, endOfToday } = await this.dateService.startAndEndOfToday();
+  
+    const deliverymen = await this.prismaService.user.findMany({
+      where: {
+        role: 'DELIVERYMAN',
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+      take: Number(pagination.itemsPerPage),
+      skip: (pagination.page - 1) * Number(pagination.itemsPerPage),
+      orderBy: {
+        name: 'asc',
+      },
+    });
+  
+    const balances = await Promise.all(
+      deliverymen.map(async (deliveryman) => {
+        const cashSaleTransactions = await this.prismaService.transaction.findMany({
+          where: {
+            category: 'SALE',
+            userId: deliveryman.id,
+            sales: {
+              some: {
+                paymentMethod: {
+                  equals: 'DINHEIRO',
+                },
+              },
+            },
+            createdAt: {
+              gte: startOfToday,
+              lte: endOfToday,
+            },
+          },
+        });
+  
+        const cashBalance = cashSaleTransactions.reduce((acc, curr) => acc + (curr.amount || 0), 0) / 100;
+  
+        return {
+          name: deliveryman.name,
+          cashBalance,
+        };
+      })
+    );
+  
+    return balances.filter(balance => balance.cashBalance > 0);
+  }
 
   async update(transaction: Transaction): Promise<void> {
     const toPrisma = PrismaTransactionsMapper.toPrisma(transaction);
