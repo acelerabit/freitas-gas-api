@@ -93,6 +93,7 @@ export class SalesController {
     await this.updateSaleUseCase.execute({
       saleId,
       customerId,
+      deliverymanId,
       createdAt,
       paymentMethod,
       products,

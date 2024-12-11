@@ -6,6 +6,7 @@ import { BottleStatus, ProductType } from '@prisma/client';
 import { Sale } from '../../entities/sale';
 import { SalesRepository } from '../../repositories/sales-repository';
 import { TransactionRepository } from '../../repositories/transaction-repository';
+import { BankAccountsRepository } from '@/application/repositories/bank-repositry';
 
 interface UpdateSaleUseCaseProps {
   saleId: string;
@@ -33,6 +34,7 @@ export class UpdateSaleUseCase {
     private readonly transactionRepository: TransactionRepository,
     private readonly customerRepository: CustomersRepository,
     private readonly usersRepository: UsersRepository,
+    private readonly bankRepository: BankAccountsRepository,
   ) {}
 
   async execute({
@@ -112,6 +114,43 @@ export class UpdateSaleUseCase {
 
     sale.calculateTotalUpdate();
 
+    const bankAccountToThisPayment =
+      await this.bankRepository.accountToThisPaymentMethod(sale.paymentMethod);
+
+    if (
+      !bankAccountToThisPayment &&
+      sale.paymentMethod !== 'DINHEIRO' &&
+      sale.paymentMethod !== 'FIADO'
+    ) {
+      throw new BadRequestException(
+        'Não há conta associada a esse tipo de método de pagamento',
+        {
+          cause: new Error(
+            'Não há conta associada a esse tipo de método de pagamento',
+          ),
+          description:
+            'Não há conta associada a esse tipo de método de pagamento',
+        },
+      );
+    }
+
+    if (
+      !bankAccountToThisPayment &&
+      sale.paymentMethod === 'DINHEIRO' &&
+      deliveryman.role === 'ADMIN'
+    ) {
+      throw new BadRequestException(
+        'Não há conta associada a esse tipo de método de pagamento',
+        {
+          cause: new Error(
+            'Não há conta associada a esse tipo de método de pagamento',
+          ),
+          description:
+            'Não há conta associada a esse tipo de método de pagamento',
+        },
+      );
+    }
+
     await this.salesRepository.update(sale);
 
     for (const product of sale.products) {
@@ -129,12 +168,6 @@ export class UpdateSaleUseCase {
           product.status,
         );
       }
-
-      // await this.salesRepository.updateStock(
-      //   product.id,
-      //   product.quantity,
-      //   product.status,
-      // );
     }
 
     const saleProducts = sale.products.map((product) => ({
@@ -150,7 +183,8 @@ export class UpdateSaleUseCase {
       sale.transactionId,
     );
 
-    transaction.userId = sale.deliverymanId;
+    transaction.userId = deliverymanId;
+    transaction.bankAccountId = bankAccountToThisPayment?.id ?? null;
 
     await this.transactionRepository.update(transaction);
 

@@ -625,10 +625,11 @@ export class PrismaTransactionRepository extends TransactionRepository {
     return finalBalance;
   }
   async getDeliverymenCashBalances(
-    pagination: PaginationParams
+    pagination: PaginationParams,
   ): Promise<{ name: string; cashBalance: number }[]> {
-    const { startOfToday, endOfToday } = await this.dateService.startAndEndOfToday();
-  
+    const { startOfToday, endOfToday } =
+      await this.dateService.startAndEndOfToday();
+
     const deliverymen = await this.prismaService.user.findMany({
       where: {
         role: 'DELIVERYMAN',
@@ -643,37 +644,42 @@ export class PrismaTransactionRepository extends TransactionRepository {
         name: 'asc',
       },
     });
-  
+
     const balances = await Promise.all(
       deliverymen.map(async (deliveryman) => {
-        const cashSaleTransactions = await this.prismaService.transaction.findMany({
-          where: {
-            category: 'SALE',
-            userId: deliveryman.id,
-            sales: {
-              some: {
-                paymentMethod: {
-                  equals: 'DINHEIRO',
+        const cashSaleTransactions =
+          await this.prismaService.transaction.findMany({
+            where: {
+              category: 'SALE',
+              userId: deliveryman.id,
+              sales: {
+                some: {
+                  paymentMethod: {
+                    equals: 'DINHEIRO',
+                  },
                 },
               },
+              createdAt: {
+                gte: startOfToday,
+                lte: endOfToday,
+              },
             },
-            createdAt: {
-              gte: startOfToday,
-              lte: endOfToday,
-            },
-          },
-        });
-  
-        const cashBalance = cashSaleTransactions.reduce((acc, curr) => acc + (curr.amount || 0), 0) / 100;
-  
+          });
+
+        const cashBalance =
+          cashSaleTransactions.reduce(
+            (acc, curr) => acc + (curr.amount || 0),
+            0,
+          ) / 100;
+
         return {
           name: deliveryman.name,
           cashBalance,
         };
-      })
+      }),
     );
-  
-    return balances.filter(balance => balance.cashBalance > 0);
+
+    return balances.filter((balance) => balance.cashBalance > 0);
   }
 
   async update(transaction: Transaction): Promise<void> {
@@ -704,6 +710,8 @@ export class PrismaTransactionRepository extends TransactionRepository {
         ...toPrisma,
       },
     });
+
+    console.log(transactionUpdated);
 
     if (existingTransaction.sales.length > 0) {
       await this.prismaService.sales.updateMany({
