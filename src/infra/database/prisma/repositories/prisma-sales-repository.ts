@@ -84,15 +84,19 @@ export class PrismaSalesRepository extends SalesRepository {
         }),
       );
 
-      const saleWithCustomerId = new Sale(sale.customerId, {
-        deliverymanId: sale.deliverymanId,
-        paymentMethod: sale.paymentMethod,
-        products: formatProducts.filter((product) => product !== null),
-        totalAmount: sale.totalAmount,
-        type: sale.type,
-        customer: customer,
-        deliveryman: deliveryman,
-      });
+      const saleWithCustomerId = new Sale(
+        sale.customerId,
+        {
+          deliverymanId: sale.deliverymanId,
+          paymentMethod: sale.paymentMethod,
+          products: formatProducts.filter((product) => product !== null),
+          totalAmount: sale.totalAmount,
+          type: sale.type,
+          customer: customer,
+          deliveryman: deliveryman,
+        },
+        sale.id,
+      );
 
       for (const product of saleWithCustomerId.products) {
         await this.updateStock(product.id, product.quantity, product.status);
@@ -100,7 +104,20 @@ export class PrismaSalesRepository extends SalesRepository {
 
       saleWithCustomerId.calculateTotal();
 
-      const saleId = await this.createSale(saleWithCustomerId);
+      // const saleId = await this.createSale(saleWithCustomerId);
+
+      const createdSale = await prisma.sales.create({
+        data: {
+          id: saleWithCustomerId.id,
+          customerId: saleWithCustomerId.customerId,
+          paymentMethod: saleWithCustomerId.paymentMethod as PaymentMethod,
+          total: saleWithCustomerId.totalAmount,
+          returned: false,
+          transactionId: saleWithCustomerId.transactionId,
+        },
+      });
+
+      const saleId = createdSale.id;
 
       const saleProducts = saleWithCustomerId.products.map((product) => ({
         id: product.id,
@@ -109,12 +126,58 @@ export class PrismaSalesRepository extends SalesRepository {
         quantity: product.quantity,
       }));
 
-      await this.createSalesProducts(saleId, saleProducts);
+      // await this.createSalesProducts(saleId, saleProducts);
+
+      const salesProducts = saleProducts.map((product) => ({
+        saleId,
+        salePrice: product.salePrice,
+        typeSale: product.typeSale,
+        productId: product.id,
+        quantity: product.quantity,
+      }));
+
+      await prisma.salesProduct.createMany({
+        data: salesProducts,
+      });
 
       const bankAccountToThisPayment =
         await this.bankRepository.accountToThisPaymentMethod(
           sale.paymentMethod,
         );
+
+      if (
+        !bankAccountToThisPayment &&
+        sale.paymentMethod !== 'DINHEIRO' &&
+        sale.paymentMethod !== 'FIADO'
+      ) {
+        throw new BadRequestException(
+          'Não há conta associada a esse tipo de método de pagamento',
+          {
+            cause: new Error(
+              'Não há conta associada a esse tipo de método de pagamento',
+            ),
+            description:
+              'Não há conta associada a esse tipo de método de pagamento',
+          },
+        );
+      }
+
+      if (
+        !bankAccountToThisPayment &&
+        sale.paymentMethod === 'DINHEIRO' &&
+        deliveryman.role === 'ADMIN'
+      ) {
+        throw new BadRequestException(
+          'Não há conta associada a esse tipo de método de pagamento',
+          {
+            cause: new Error(
+              'Não há conta associada a esse tipo de método de pagamento',
+            ),
+            description:
+              'Não há conta associada a esse tipo de método de pagamento',
+          },
+        );
+      }
 
       const transaction = new Transaction({
         amount: saleWithCustomerId.totalAmount,
@@ -126,12 +189,121 @@ export class PrismaSalesRepository extends SalesRepository {
         bankAccountId: bankAccountToThisPayment?.id ?? null,
       });
 
-      await this.transactionRepository.createTransaction(transaction);
+      //  const transactionCreated = await this.transactionRepository.createTransaction(transaction);
 
-      saleWithCustomerId.transactionId = transaction.id;
-      saleWithCustomerId.deliverymanId = transaction.userId;
+      const transactionData = {
+        id: transaction.id,
+        amount: transaction.amount,
+        transactionType: transaction.transactionType,
+        bankAccountId: transaction.bankAccountId,
+        category: transaction.category,
+        userId: transaction.userId,
+        referenceId: transaction.referenceId ?? null,
+        createdAt: transaction.createdAt,
+        customCategory: transaction.customCategory ?? null,
+        description: transaction.description,
+        depositDate: transaction.depositDate,
+        senderUserId: transaction.senderUserId,
+        bank: transaction.bank,
+      };
 
-      await this.update(saleWithCustomerId);
+      const transactionCreated = await prisma.transaction.create({
+        data: transactionData,
+      });
+
+      saleWithCustomerId.transactionId = transactionCreated.id;
+      saleWithCustomerId.deliverymanId = transactionCreated.userId;
+
+      const response = await prisma.sales.update({
+        where: {
+          id: createdSale.id,
+        },
+        data: {
+          transactionId: transactionCreated.id,
+        },
+        include: {
+          transaction: {
+            include: {
+              user: true,
+            },
+          },
+          customer: true,
+          products: {
+            include: {
+              product: true,
+              sale: true,
+            },
+          },
+        },
+      });
+
+      const formatted = PrismaSalesMapper.toDomain(response);
+
+      // await this.update(formatted);
+
+      const dbSale = await prisma.sales.findUnique({
+        where: {
+          id: sale.id,
+        },
+      });
+
+      if (dbSale.paymentMethod !== formatted.paymentMethod) {
+        const toPrisma = PrismaSalesMapper.toPrisma(formatted);
+
+        await prisma.sales.update({
+          where: {
+            id: sale.id,
+          },
+          data: {
+            ...toPrisma,
+          },
+        });
+
+        const result = await prisma.bankAccount.findFirst({
+          where: {
+            paymentsAssociated: {
+              hasSome: formatted.paymentMethod,
+            },
+          },
+        });
+
+        if (!result) {
+          return null;
+        }
+
+        await prisma.transaction.update({
+          where: {
+            id: formatted.transactionId,
+          },
+          data: {
+            createdAt: formatted.createdAt,
+            bankAccountId: result.id,
+            bank: result.bank,
+          },
+        });
+
+        return;
+      }
+
+      const toPrisma = PrismaSalesMapper.toPrisma(formatted);
+
+      await prisma.sales.update({
+        where: {
+          id: formatted.id,
+        },
+        data: {
+          ...toPrisma,
+        },
+      });
+
+      await prisma.transaction.update({
+        where: {
+          id: formatted.transactionId,
+        },
+        data: {
+          createdAt: formatted.createdAt,
+        },
+      });
 
       if (saleWithCustomerId.paymentMethod === 'FIADO') {
         customer.creditBalance += saleWithCustomerId.totalAmount;

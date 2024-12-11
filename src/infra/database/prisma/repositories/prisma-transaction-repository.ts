@@ -329,11 +329,23 @@ export class PrismaTransactionRepository extends TransactionRepository {
         category: 'SALE',
         sales: {
           some: {
-            paymentMethod: {
-              not: {
-                in: ['DINHEIRO', 'FIADO'],
+            OR: [
+              {
+                paymentMethod: {
+                  notIn: ['DINHEIRO', 'FIADO'],
+                },
               },
-            },
+              {
+                paymentMethod: 'DINHEIRO',
+                transaction: {
+                  user: {
+                    role: {
+                      equals: 'ADMIN',
+                    },
+                  },
+                },
+              },
+            ],
           },
         },
       },
@@ -416,13 +428,20 @@ export class PrismaTransactionRepository extends TransactionRepository {
           category: 'SALE',
           sales: {
             some: {
-              OR: [
+              NOT: [
                 {
-                  paymentMethod: { not: 'DINHEIRO' }, // Excluir 'DINHEIRO'
+                  paymentMethod: 'DINHEIRO',
+                  transaction: {
+                    user: {
+                      role: {
+                        not: 'ADMIN',
+                      },
+                    },
+                  },
                 },
                 {
-                  paymentMethod: 'FIADO', // Incluir 'FIADO'
-                  paid: true, // Somente quando 'paid' for true
+                  paymentMethod: 'FIADO',
+                  paid: false,
                 },
               ],
             },
@@ -510,6 +529,18 @@ export class PrismaTransactionRepository extends TransactionRepository {
         expenseTotal -
         outgoingTotal -
         totalDebt;
+
+      // console.log({
+      //   bank: bankAccount.bank,
+      //   totalIncome,
+
+      //   saleTotal,
+      //   incomingTotal,
+      //   expenseTotal,
+      //   expenseTransactions,
+      //   outgoingTotal,
+      //   totalDebt,
+      // });
 
       // Adicionar o resultado no array
       result.push({
