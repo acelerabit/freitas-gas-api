@@ -539,6 +539,31 @@ export class PrismaSalesRepository extends SalesRepository {
     });
   }
 
+  async markAllAsPaid(
+    customerId: string,
+    bankAccountId: string,
+  ): Promise<void> {
+    const sales = await this.prismaService.sales.findMany({
+      where: { customerId },
+      include: { transaction: true },
+    });
+
+    await Promise.all(
+      sales.map((sale) =>
+        this.prismaService.sales.update({
+          where: { id: sale.id },
+          data: {
+            paid: true,
+            transaction: {
+              update: { bankAccountId },
+            },
+          },
+          include: { transaction: true },
+        }),
+      ),
+    );
+  }
+
   async findById(id: string): Promise<Sale | null> {
     const raw = await this.prismaService.sales.findUnique({
       where: {
@@ -1474,25 +1499,44 @@ export class PrismaSalesRepository extends SalesRepository {
         : undefined,
     });
 
-    // const customerDebts: {
-    //   [key: string]: {
-    //     customerId: string;
-    //     customerName: string;
-    //     totalDebt: number;
-    //   };
-    // } = {};
+    return debts
+      .filter((debts) => debts.total > 0)
+      .map((debt) => ({
+        id: debt.id,
+        customerId: debt.customerId,
+        customerName: debt.customer.name,
+        totalDebt: debt.total / 100,
+        paid: debt.paid,
+      }));
+  }
 
-    // debts.forEach((sale) => {
-    //   const customerId = sale.customer.id;
-    //   if (!customerDebts[customerId]) {
-    //     customerDebts[customerId] = {
-    //       customerId,
-    //       customerName: sale.customer.name,
-    //       totalDebt: 0,
-    //     };
-    //   }
-    //   customerDebts[customerId].totalDebt += sale.total;
-    // });
+  async getCustomersWithPositiveFiadoDebtsByCustomer(
+    customerId: string,
+    pagination?: PaginationParams,
+  ): Promise<
+    { customerId: string; customerName: string; totalDebt: number }[]
+  > {
+    const debts = await this.prismaService.sales.findMany({
+      where: {
+        paymentMethod: 'FIADO',
+        total: { gte: 0 },
+        customerId,
+      },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      take: pagination?.itemsPerPage
+        ? Number(pagination.itemsPerPage)
+        : undefined,
+      skip: pagination?.page
+        ? (pagination.page - 1) * Number(pagination.itemsPerPage)
+        : undefined,
+    });
 
     return debts
       .filter((debts) => debts.total > 0)
@@ -1504,6 +1548,72 @@ export class PrismaSalesRepository extends SalesRepository {
         paid: debt.paid,
       }));
   }
+
+  async getCustomersWithPositiveFiadoDebtsTotal(
+    pagination?: PaginationParams,
+  ): Promise<
+    {
+      customerId: string;
+      customerName: string;
+      totalDebt: number;
+    }[]
+  > {
+    const debts = await this.prismaService.sales.findMany({
+      where: {
+        paymentMethod: 'FIADO',
+        total: { gte: 0 },
+      },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      take: pagination?.itemsPerPage
+        ? Number(pagination.itemsPerPage)
+        : undefined,
+      skip: pagination?.page
+        ? (pagination.page - 1) * Number(pagination.itemsPerPage)
+        : undefined,
+    });
+
+    const customerDebts: {
+      [key: string]: {
+        customerId: string;
+        customerName: string;
+        totalDebt: number;
+        paid: boolean;
+      };
+    } = {};
+
+    debts.forEach((sale) => {
+      const customerId = sale.customer.id;
+      if (!customerDebts[customerId]) {
+        customerDebts[customerId] = {
+          customerId,
+          customerName: sale.customer.name,
+          totalDebt: 0,
+          paid: sale.paid,
+        };
+      }
+      customerDebts[customerId].totalDebt += sale.total;
+    });
+
+    const formattedDebts = Object.entries(customerDebts).map(
+      ([id, debt]: [string, any]) => ({
+        id,
+        customerId: debt.customerId,
+        customerName: debt.customerName,
+        totalDebt: debt.totalDebt / 100,
+        paid: debt.paid,
+      }),
+    );
+
+    return formattedDebts;
+  }
+
   async getTotalSalesByPaymentMethod(
     startDate?: Date,
     endDate?: Date,

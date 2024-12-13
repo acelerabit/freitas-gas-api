@@ -34,6 +34,9 @@ import { GetCustomersWithPositiveFiadoDebts } from '@/application/use-cases/sale
 import { GetTotalSalesByPaymentMethodUseCase } from '@/application/use-cases/sale/get-total-sales-paymentMethod';
 import { GetTotalSalesByPaymentMethodForTodayUseCase } from '@/application/use-cases/sale/get-total-sales-paymentMethod-today';
 import { MarkAsPaid } from '@/application/use-cases/sale/mask-as-paid';
+import { GetCustomersWithPositiveFiadoDebtsTotal } from '@/application/use-cases/sale/get-customer-with-sale-fiado-total';
+import { GetCustomersWithPositiveFiadoDebtsByCustomer } from '@/application/use-cases/sale/get-customer-with-sale-fiado-by-customer';
+import { MarkAllAsPaid } from '@/application/use-cases/sale/mark-all-as-paid';
 
 @Controller('sales')
 export class SalesController {
@@ -51,9 +54,12 @@ export class SalesController {
     private getTotalMoneySalesDeliverymanToday: GetTotalMoneySalesDeliverymanToday,
     private readonly getTotalMoneySalesByPaymentMethodFiado: GetTotalMoneySalesByPaymentMethodFiado,
     private getCustomersWithPositiveFiadoDebts: GetCustomersWithPositiveFiadoDebts,
+    private getCustomersWithPositiveFiadoDebtsTotal: GetCustomersWithPositiveFiadoDebtsTotal,
+    private getCustomersWithPositiveFiadoDebtsByCustomer: GetCustomersWithPositiveFiadoDebtsByCustomer,
     private readonly getTotalSalesByPaymentMethodUseCase: GetTotalSalesByPaymentMethodUseCase,
     private readonly getTotalSalesByPaymentMethodForTodayUseCase: GetTotalSalesByPaymentMethodForTodayUseCase,
     private markAsPaid: MarkAsPaid,
+    private markAllAsPaid: MarkAllAsPaid,
   ) {}
 
   @Post()
@@ -297,6 +303,44 @@ export class SalesController {
     return customersWithDebts;
   }
 
+  @Get('/customers-with-debts/:customerId')
+  async getCustomersWithDebtsByCustomer(
+    @Param('customerId') customerId: string,
+    @Query() query: { page: string; itemsPerPage: string },
+  ): Promise<
+    { customerId: string; customerName: string; totalDebt: number }[]
+  > {
+    const pagination = {
+      page: Number(query.page),
+      itemsPerPage: Number(query.itemsPerPage),
+    };
+
+    const customersWithDebts =
+      await this.getCustomersWithPositiveFiadoDebtsByCustomer.execute({
+        customerId,
+        pagination,
+      });
+
+    return customersWithDebts;
+  }
+
+  @Get('/customers-with-debts-total')
+  async getCustomersWithDebtsTotal(
+    @Query() query: { page: string; itemsPerPage: string },
+  ): Promise<
+    { customerId: string; customerName: string; totalDebt: number }[]
+  > {
+    const pagination = {
+      page: Number(query.page),
+      itemsPerPage: Number(query.itemsPerPage),
+    };
+
+    const customersWithDebts =
+      await this.getCustomersWithPositiveFiadoDebtsTotal.execute(pagination);
+
+    return customersWithDebts;
+  }
+
   @Patch('/mark-as-paid/:id')
   async markPaid(
     @Param('id') id: string,
@@ -304,6 +348,19 @@ export class SalesController {
   ): Promise<void> {
     await this.markAsPaid.execute({
       id,
+      bankAccountId: body.bankAccountId,
+    });
+
+    return;
+  }
+
+  @Patch('/mark-all-as-paid/:customerId')
+  async markAllPaid(
+    @Param('customerId') customerId: string,
+    @Body() body: { bankAccountId: string },
+  ): Promise<void> {
+    await this.markAllAsPaid.execute({
+      customerId,
       bankAccountId: body.bankAccountId,
     });
 

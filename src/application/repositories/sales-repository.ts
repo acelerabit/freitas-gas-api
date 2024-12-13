@@ -23,6 +23,10 @@ export abstract class SalesRepository {
     deliveryman: User,
   ): Promise<void>;
   abstract markAsPaid(id: string, bankAccountId: string): Promise<void>;
+  abstract markAllAsPaid(
+    customerId: string,
+    bankAccountId: string,
+  ): Promise<void>;
   abstract updateStock(
     productId: string,
     quantityChange: number,
@@ -97,6 +101,25 @@ export abstract class SalesRepository {
     deliverymanId?: string,
   ): Promise<number>;
   abstract getCustomersWithPositiveFiadoDebts(
+    pagination?: PaginationParams,
+  ): Promise<
+    {
+      customerId: string;
+      customerName: string;
+      totalDebt: number;
+    }[]
+  >;
+  abstract getCustomersWithPositiveFiadoDebtsByCustomer(
+    customerId: string,
+    pagination?: PaginationParams,
+  ): Promise<
+    {
+      customerId: string;
+      customerName: string;
+      totalDebt: number;
+    }[]
+  >;
+  abstract getCustomersWithPositiveFiadoDebtsTotal(
     pagination?: PaginationParams,
   ): Promise<
     {
