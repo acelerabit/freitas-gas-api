@@ -711,8 +711,6 @@ export class PrismaTransactionRepository extends TransactionRepository {
       },
     });
 
-    console.log(transactionUpdated);
-
     if (existingTransaction.sales.length > 0) {
       await this.prismaService.sales.updateMany({
         where: {

@@ -32,6 +32,13 @@ export abstract class SalesRepository {
     quantityChange: number,
     status: BottleStatus,
   ): Promise<void>;
+  abstract updateStockOperations(
+    productId: string,
+    quantityChange: number,
+    status: BottleStatus,
+    operation: 'add' | 'remove',
+    customerId: string,
+  ): Promise<void>;
   abstract findById(id: string): Promise<Sale | null>;
   abstract createSalesProducts(
     saleId: string,

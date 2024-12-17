@@ -69,6 +69,8 @@ export class UpdateSaleUseCase {
       });
     }
 
+    const oldSaleProducts = [...sale.products];
+
     const productsFormatted = products.map(
       (product) =>
         new Product(
@@ -154,7 +156,9 @@ export class UpdateSaleUseCase {
     await this.salesRepository.update(sale);
 
     for (const product of sale.products) {
-      const originalProduct = sale.products.find((p) => p.id === product.id);
+      const originalProduct = oldSaleProducts.find(
+        (p) => p.status === product.status && p.type === product.type,
+      );
 
       // Atualiza o estoque apenas se a quantidade ou status mudou
       if (
@@ -162,11 +166,33 @@ export class UpdateSaleUseCase {
         originalProduct.quantity !== product.quantity ||
         originalProduct.status !== product.status
       ) {
-        await this.salesRepository.updateStock(
-          product.id,
-          product.quantity,
-          product.status,
-        );
+        if (!originalProduct) {
+          await this.salesRepository.updateStock(
+            product.id,
+            product.quantity,
+            product.status,
+          );
+        }
+
+        if (originalProduct && originalProduct.quantity < product.quantity) {
+          await this.salesRepository.updateStockOperations(
+            product.id,
+            Math.abs(originalProduct.quantity - product.quantity),
+            product.status,
+            'add',
+            sale.customerId,
+          );
+        }
+
+        if (originalProduct && originalProduct.quantity > product.quantity) {
+          await this.salesRepository.updateStockOperations(
+            product.id,
+            Math.abs(originalProduct.quantity - product.quantity),
+            product.status,
+            'remove',
+            sale.customerId,
+          );
+        }
       }
     }
 
