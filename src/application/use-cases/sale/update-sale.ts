@@ -167,6 +167,7 @@ export class UpdateSaleUseCase {
         originalProduct.status !== product.status
       ) {
         if (!originalProduct) {
+          console.log('Here');
           await this.salesRepository.updateStock(
             product.id,
             product.quantity,
@@ -193,6 +194,16 @@ export class UpdateSaleUseCase {
             sale.customerId,
           );
         }
+
+        // if (originalProduct && originalProduct.quantity > product.quantity) {
+        //   await this.salesRepository.updateStockOperations(
+        //     product.id,
+        //     Math.abs(originalProduct.quantity - product.quantity),
+        //     product.status,
+        //     'remove',
+        //     sale.customerId,
+        //   );
+        // }
       }
     }
 

@@ -118,6 +118,8 @@ export class PrismaSalesRepository extends SalesRepository {
         },
       });
 
+      console.log(createdSale, 'CREATED');
+
       const saleId = createdSale.id;
 
       const saleProducts = saleWithCustomerId.products.map((product) => ({
@@ -1735,12 +1737,12 @@ export class PrismaSalesRepository extends SalesRepository {
           },
         },
       },
-      take: pagination?.itemsPerPage
-        ? Number(pagination.itemsPerPage)
-        : undefined,
-      skip: pagination?.page
-        ? (pagination.page - 1) * Number(pagination.itemsPerPage)
-        : undefined,
+      // take: pagination?.itemsPerPage
+      //   ? Number(pagination.itemsPerPage)
+      //   : undefined,
+      // skip: pagination?.page
+      //   ? (pagination.page - 1) * Number(pagination.itemsPerPage)
+      //   : undefined,
     });
 
     const customerDebts: {
@@ -1783,7 +1785,12 @@ export class PrismaSalesRepository extends SalesRepository {
       }),
     );
 
-    return formattedDebts;
+    const page = pagination?.page || 1; // Página atual (padrão: 1)
+    const itemsPerPage = pagination?.itemsPerPage || 10; // Itens por página (padrão: 10)
+    const startIndex = (page - 1) * itemsPerPage; // Índice inicial
+    const endIndex = startIndex + itemsPerPage;
+
+    return formattedDebts.slice(startIndex, endIndex);
   }
 
   async getTotalSalesByPaymentMethod(
