@@ -666,12 +666,30 @@ export class PrismaTransactionRepository extends TransactionRepository {
             },
           });
 
-        const cashBalance =
-          cashSaleTransactions.reduce(
-            (acc, curr) => acc + (curr.amount || 0),
-            0,
-          ) / 100;
+        const depositTransactions =
+          await this.prismaService.transaction.findMany({
+            where: {
+              category: 'DEPOSIT',
+              userId: deliveryman.id,
+              createdAt: {
+                gte: startOfToday,
+                lte: endOfToday,
+              },
+            },
+          });
 
+        const totalCashSales = cashSaleTransactions.reduce(
+          (acc, curr) => acc + (curr.amount || 0),
+          0,
+        );
+
+        const totalDeposits = depositTransactions.reduce(
+          (acc, curr) => acc + (curr.amount || 0),
+          0,
+        );
+
+        const cashBalance = (totalCashSales - totalDeposits) / 100;
+  
         return {
           name: deliveryman.name,
           cashBalance,
