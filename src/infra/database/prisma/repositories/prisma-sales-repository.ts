@@ -114,6 +114,7 @@ export class PrismaSalesRepository extends SalesRepository {
           total: saleWithCustomerId.totalAmount,
           returned: false,
           transactionId: saleWithCustomerId.transactionId,
+          paid: saleWithCustomerId.paymentMethod === 'FIADO' ? false : true,
         },
       });
 
@@ -1585,6 +1586,7 @@ export class PrismaSalesRepository extends SalesRepository {
         customerName: string;
         totalDebt: number;
         paid: boolean;
+        sales: { id: string; paid: boolean }[];
       };
     } = {};
 
@@ -1596,9 +1598,15 @@ export class PrismaSalesRepository extends SalesRepository {
           customerName: sale.customer.name,
           totalDebt: 0,
           paid: sale.paid,
+          sales: [],
         };
       }
-      customerDebts[customerId].totalDebt += sale.total;
+
+      if (!sale.paid) {
+        customerDebts[customerId].totalDebt += sale.total;
+      }
+
+      customerDebts[customerId].sales.push(sale);
     });
 
     const formattedDebts = Object.entries(customerDebts).map(
@@ -1608,6 +1616,7 @@ export class PrismaSalesRepository extends SalesRepository {
         customerName: debt.customerName,
         totalDebt: debt.totalDebt / 100,
         paid: debt.paid,
+        sales: debt.sales,
       }),
     );
 
