@@ -32,6 +32,11 @@ export abstract class SalesRepository {
     quantityChange: number,
     status: BottleStatus,
   ): Promise<void>;
+  abstract revertStock(
+    productId: string,
+    quantityChange: number,
+    status: BottleStatus,
+  ): Promise<void>;
   abstract updateStockOperations(
     productId: string,
     quantityChange: number,
@@ -66,6 +71,18 @@ export abstract class SalesRepository {
   ): Promise<Sale[]>;
   abstract deleteSale(saleId: string): Promise<void>;
   abstract update(sale: Sale): Promise<void>;
+  abstract addComodato(
+    customerId: string,
+    quantity: number,
+    typeSale: BottleStatus,
+    productId: string,
+  );
+  abstract revertComodato(
+    customerId: string,
+    quantity: number,
+    typeSale: BottleStatus,
+    productId: string,
+  );
   abstract updateSalesProducts(
     saleId: string,
     saleProducts: {

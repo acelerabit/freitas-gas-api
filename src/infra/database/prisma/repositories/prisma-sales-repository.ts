@@ -118,8 +118,6 @@ export class PrismaSalesRepository extends SalesRepository {
         },
       });
 
-      console.log(createdSale, 'CREATED');
-
       const saleId = createdSale.id;
 
       const saleProducts = saleWithCustomerId.products.map((product) => ({
@@ -519,6 +517,110 @@ export class PrismaSalesRepository extends SalesRepository {
       description: 'Status fornecido não é válido',
     });
   }
+
+  // async revertStock(
+  //   productId: string,
+  //   quantity: number,
+  //   status: BottleStatus,
+  // ): Promise<void> {
+  //   const product = await this.prismaService.product.findUnique({
+  //     where: { id: productId },
+  //   });
+
+  //   if (!product) {
+  //     throw new BadRequestException('Produto não encontrado', {
+  //       cause: new Error('Produto não encontrado'),
+  //       description: 'Produto não encontrado',
+  //     });
+  //   }
+
+  //   if (status === 'FULL') {
+  //     const revertedStock = product.quantity + quantity;
+
+  //     await this.prismaService.product.update({
+  //       where: { id: productId },
+  //       data: { quantity: revertedStock },
+  //     });
+
+  //     return;
+  //   }
+
+  //   if (status === 'EMPTY') {
+  //     const productFull = await this.prismaService.product.findFirst({
+  //       where: {
+  //         type: product.type,
+  //         status: 'FULL',
+  //       },
+  //     });
+
+  //     if (!productFull) {
+  //       throw new BadRequestException('Produto cheio não encontrado', {
+  //         cause: new Error('Produto cheio não encontrado'),
+  //         description: 'Produto cheio não encontrado',
+  //       });
+  //     }
+
+  //     const revertedStockFull = productFull.quantity + quantity;
+  //     const revertedStockEmpty = product.quantity - quantity;
+
+  //     if (revertedStockEmpty < 0) {
+  //       throw new BadRequestException('Estoque insuficiente para reverter', {
+  //         cause: new Error('Estoque insuficiente para reverter'),
+  //         description: 'Estoque insuficiente para reverter',
+  //       });
+  //     }
+
+  //     await this.prismaService.product.update({
+  //       where: { id: productFull.id },
+  //       data: { quantity: revertedStockFull },
+  //     });
+
+  //     await this.prismaService.product.update({
+  //       where: { id: productId },
+  //       data: { quantity: revertedStockEmpty },
+  //     });
+
+  //     return;
+  //   }
+
+  //   if (status === 'COMODATO') {
+  //     const productFull = await this.prismaService.product.findFirst({
+  //       where: {
+  //         type: product.type,
+  //         status: 'FULL',
+  //       },
+  //     });
+
+  //     if (!productFull) {
+  //       throw new BadRequestException('Produto cheio não encontrado', {
+  //         cause: new Error('Produto cheio não encontrado'),
+  //         description: 'Produto cheio não encontrado',
+  //       });
+  //     }
+
+  //     const revertedStockFull = productFull.quantity + quantity;
+  //     const revertedStockComodato = product.quantity - quantity;
+
+  //     if (revertedStockComodato < 0) {
+  //       throw new BadRequestException('Estoque insuficiente para reverter', {
+  //         cause: new Error('Estoque insuficiente para reverter'),
+  //         description: 'Estoque insuficiente para reverter',
+  //       });
+  //     }
+
+  //     await this.prismaService.product.update({
+  //       where: { id: productFull.id },
+  //       data: { quantity: revertedStockFull },
+  //     });
+
+  //     await this.prismaService.product.update({
+  //       where: { id: productId },
+  //       data: { quantity: revertedStockComodato },
+  //     });
+
+  //     return;
+  //   }
+  // } // GPT
 
   async updateStock(
     productId: string,
@@ -1207,6 +1309,13 @@ export class PrismaSalesRepository extends SalesRepository {
 
       const newStock = product.quantity - quantity;
 
+      console.log({
+        productFullQuantity: productFull.quantity,
+        productQuantity: product.quantity,
+        newStockFull,
+        newStock,
+      });
+
       if (newStock < 0) {
         throw new BadRequestException('Estoque insuficiente', {
           cause: new Error('Estoque insuficiente'),
@@ -1330,15 +1439,15 @@ export class PrismaSalesRepository extends SalesRepository {
       include: {
         products: {
           where: {
-            AND: [
-              {
-                productId,
-              },
-            ],
+            productId,
           },
         },
       },
     });
+
+    if (!raw) {
+      throw new BadRequestException('Erro');
+    }
 
     const updated = await this.prismaService.customerWithComodato.update({
       where: {
