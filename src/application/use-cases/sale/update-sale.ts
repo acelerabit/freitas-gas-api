@@ -6,6 +6,7 @@ import { BottleStatus, ProductType } from '@prisma/client';
 import { Sale } from '../../entities/sale';
 import { SalesRepository } from '../../repositories/sales-repository';
 import { TransactionRepository } from '../../repositories/transaction-repository';
+import { BankAccountsRepository } from '@/application/repositories/bank-repositry';
 
 interface UpdateSaleUseCaseProps {
   saleId: string;
@@ -33,6 +34,7 @@ export class UpdateSaleUseCase {
     private readonly transactionRepository: TransactionRepository,
     private readonly customerRepository: CustomersRepository,
     private readonly usersRepository: UsersRepository,
+    private readonly bankRepository: BankAccountsRepository,
   ) {}
 
   async execute({
@@ -66,6 +68,9 @@ export class UpdateSaleUseCase {
         description: 'Venda não encontrada',
       });
     }
+
+    const oldSaleProducts = [...sale.products];
+    const oldSaleCustomerId = sale.customerId;
 
     const productsFormatted = products.map(
       (product) =>
@@ -112,14 +117,132 @@ export class UpdateSaleUseCase {
 
     sale.calculateTotalUpdate();
 
+    const bankAccountToThisPayment =
+      await this.bankRepository.accountToThisPaymentMethod(sale.paymentMethod);
+
+    if (
+      !bankAccountToThisPayment &&
+      sale.paymentMethod !== 'DINHEIRO' &&
+      sale.paymentMethod !== 'FIADO'
+    ) {
+      throw new BadRequestException(
+        'Não há conta associada a esse tipo de método de pagamento',
+        {
+          cause: new Error(
+            'Não há conta associada a esse tipo de método de pagamento',
+          ),
+          description:
+            'Não há conta associada a esse tipo de método de pagamento',
+        },
+      );
+    }
+
+    if (
+      !bankAccountToThisPayment &&
+      sale.paymentMethod === 'DINHEIRO' &&
+      deliveryman.role === 'ADMIN'
+    ) {
+      throw new BadRequestException(
+        'Não há conta associada a esse tipo de método de pagamento',
+        {
+          cause: new Error(
+            'Não há conta associada a esse tipo de método de pagamento',
+          ),
+          description:
+            'Não há conta associada a esse tipo de método de pagamento',
+        },
+      );
+    }
+
     await this.salesRepository.update(sale);
 
+    /**
+     * fazer o rever comodato e o update comodato
+     * */
+
+    for (const product of oldSaleProducts) {
+      await this.salesRepository.revertStock(
+        product.productId,
+        product.quantity,
+        product.status,
+      );
+
+      if (product.status === 'COMODATO') {
+        this.salesRepository.revertComodato(
+          oldSaleCustomerId,
+          product.quantity,
+          product.status,
+          product.productId,
+        );
+      }
+    }
+
     for (const product of sale.products) {
+      // const originalProduct = oldSaleProducts.find(
+      //   (p) => p.status === product.status && p.type === product.type,
+      // );
+
+      // Atualiza o estoque apenas se a quantidade ou status mudou
+      // if (
+      //   !originalProduct ||
+      //   originalProduct.quantity !== product.quantity ||
+      //   originalProduct.status !== product.status
+      // ) {
+      // reverter o stock do original e atualizar o stock com o novo
+
       await this.salesRepository.updateStock(
         product.id,
         product.quantity,
         product.status,
       );
+
+      if (product.status === 'COMODATO') {
+        this.salesRepository.addComodato(
+          sale.customerId,
+          product.quantity,
+          product.status,
+          product.id,
+        );
+      }
+
+      // if (!originalProduct) {
+      //   await this.salesRepository.updateStock(
+      //     product.id,
+      //     product.quantity,
+      //     product.status,
+      //   );
+      // }
+
+      // if (originalProduct && originalProduct.quantity < product.quantity) {
+      //   await this.salesRepository.updateStockOperations(
+      //     product.id,
+      //     Math.abs(originalProduct.quantity - product.quantity),
+      //     product.status,
+      //     'add',
+      //     sale.customerId,
+      //   );
+      // }
+
+      // if (originalProduct && originalProduct.quantity > product.quantity) {
+      //   await this.salesRepository.updateStockOperations(
+      //     product.id,
+      //     Math.abs(originalProduct.quantity - product.quantity),
+      //     product.status,
+      //     'remove',
+      //     sale.customerId,
+      //   );
+      // }
+
+      // if (originalProduct && originalProduct.quantity > product.quantity) {
+      //   await this.salesRepository.updateStockOperations(
+      //     product.id,
+      //     Math.abs(originalProduct.quantity - product.quantity),
+      //     product.status,
+      //     'remove',
+      //     sale.customerId,
+      //   );
+      // }
+      // }
     }
 
     const saleProducts = sale.products.map((product) => ({
@@ -135,7 +258,8 @@ export class UpdateSaleUseCase {
       sale.transactionId,
     );
 
-    transaction.userId = sale.deliverymanId;
+    transaction.userId = deliverymanId;
+    transaction.bankAccountId = bankAccountToThisPayment?.id ?? null;
 
     await this.transactionRepository.update(transaction);
 

@@ -12,17 +12,17 @@ services:
   #     - ../freitas-gas-web/.env.production
   #   networks:
   #     - freitas-network
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: backend:v1
-    ports:
-      - "5000:5000"
-    env_file:
-      - .env
-    networks:
-      - freitas-network
+  # backend:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   image: backend:v1
+  #   ports:
+  #     - "5000:5000"
+  #   env_file:
+  #     - .env
+  #   networks:
+  #     - freitas-network
   database:
     image: postgres:15
     container_name: freitas

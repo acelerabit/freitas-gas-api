@@ -2,6 +2,8 @@ import { Product } from '@/application/entities/product';
 import { PaginationParams } from '@/@shared/pagination-interface';
 import { Sale } from '../entities/sale';
 import { BottleStatus, PaymentMethod } from '@prisma/client';
+import { Customer } from '../entities/customer';
+import { User } from '../entities/user';
 
 export type SortType =
   | 'createdAt'
@@ -15,11 +17,32 @@ export type SortType =
 
 export abstract class SalesRepository {
   abstract createSale(sale: Sale): Promise<string>;
+  abstract saveSale(
+    sale: Sale,
+    customer: Customer,
+    deliveryman: User,
+  ): Promise<void>;
   abstract markAsPaid(id: string, bankAccountId: string): Promise<void>;
+  abstract markAllAsPaid(
+    customerId: string,
+    bankAccountId: string,
+  ): Promise<void>;
   abstract updateStock(
     productId: string,
     quantityChange: number,
     status: BottleStatus,
+  ): Promise<void>;
+  abstract revertStock(
+    productId: string,
+    quantityChange: number,
+    status: BottleStatus,
+  ): Promise<void>;
+  abstract updateStockOperations(
+    productId: string,
+    quantityChange: number,
+    status: BottleStatus,
+    operation: 'add' | 'remove',
+    customerId: string,
   ): Promise<void>;
   abstract findById(id: string): Promise<Sale | null>;
   abstract createSalesProducts(
@@ -48,6 +71,18 @@ export abstract class SalesRepository {
   ): Promise<Sale[]>;
   abstract deleteSale(saleId: string): Promise<void>;
   abstract update(sale: Sale): Promise<void>;
+  abstract addComodato(
+    customerId: string,
+    quantity: number,
+    typeSale: BottleStatus,
+    productId: string,
+  );
+  abstract revertComodato(
+    customerId: string,
+    quantity: number,
+    typeSale: BottleStatus,
+    productId: string,
+  );
   abstract updateSalesProducts(
     saleId: string,
     saleProducts: {
@@ -75,6 +110,9 @@ export abstract class SalesRepository {
   abstract getTotalMoneySalesByDeliveryman(
     deliverymanId: string,
   ): Promise<number>;
+  abstract getTotalBalanceByDeliverymanYesterday(
+    deliverymanId: string,
+  ): Promise<number>;
   abstract getTotalMoneySalesByDeliverymanYesterday(
     deliverymanId: string,
   ): Promise<number>;
@@ -87,6 +125,25 @@ export abstract class SalesRepository {
     deliverymanId?: string,
   ): Promise<number>;
   abstract getCustomersWithPositiveFiadoDebts(
+    pagination?: PaginationParams,
+  ): Promise<
+    {
+      customerId: string;
+      customerName: string;
+      totalDebt: number;
+    }[]
+  >;
+  abstract getCustomersWithPositiveFiadoDebtsByCustomer(
+    customerId: string,
+    pagination?: PaginationParams,
+  ): Promise<
+    {
+      customerId: string;
+      customerName: string;
+      totalDebt: number;
+    }[]
+  >;
+  abstract getCustomersWithPositiveFiadoDebtsTotal(
     pagination?: PaginationParams,
   ): Promise<
     {

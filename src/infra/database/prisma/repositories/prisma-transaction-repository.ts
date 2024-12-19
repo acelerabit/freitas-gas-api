@@ -206,16 +206,13 @@ export class PrismaTransactionRepository extends TransactionRepository {
   ): Promise<Transaction[]> {
     const whereCondition: any = { category: 'DEPOSIT' };
 
-    // Ajustando o filtro de data se startDate for fornecido
     if (startDate) {
       whereCondition.createdAt = {
-        gte: startDate, // "greater than or equal to" (maior ou igual)
+        gte: startDate,
       };
     }
 
-    // Ajustando o filtro de data se endDate for fornecido
     if (endDate) {
-      // Ajustando a data final para o final do dia (23:59:59)
       const adjustedEndDate = new Date(endDate);
       adjustedEndDate.setHours(23, 59, 59);
 
@@ -332,11 +329,23 @@ export class PrismaTransactionRepository extends TransactionRepository {
         category: 'SALE',
         sales: {
           some: {
-            paymentMethod: {
-              not: {
-                in: ['DINHEIRO', 'FIADO'],
+            OR: [
+              {
+                paymentMethod: {
+                  notIn: ['DINHEIRO', 'FIADO'],
+                },
               },
-            },
+              {
+                paymentMethod: 'DINHEIRO',
+                transaction: {
+                  user: {
+                    role: {
+                      equals: 'ADMIN',
+                    },
+                  },
+                },
+              },
+            ],
           },
         },
       },
@@ -419,13 +428,20 @@ export class PrismaTransactionRepository extends TransactionRepository {
           category: 'SALE',
           sales: {
             some: {
-              OR: [
+              NOT: [
                 {
-                  paymentMethod: { not: 'DINHEIRO' }, // Excluir 'DINHEIRO'
+                  paymentMethod: 'DINHEIRO',
+                  transaction: {
+                    user: {
+                      role: {
+                        not: 'ADMIN',
+                      },
+                    },
+                  },
                 },
                 {
-                  paymentMethod: 'FIADO', // Incluir 'FIADO'
-                  paid: true, // Somente quando 'paid' for true
+                  paymentMethod: 'FIADO',
+                  paid: false,
                 },
               ],
             },
@@ -514,6 +530,18 @@ export class PrismaTransactionRepository extends TransactionRepository {
         outgoingTotal -
         totalDebt;
 
+      // console.log({
+      //   bank: bankAccount.bank,
+      //   totalIncome,
+
+      //   saleTotal,
+      //   incomingTotal,
+      //   expenseTotal,
+      //   expenseTransactions,
+      //   outgoingTotal,
+      //   totalDebt,
+      // });
+
       // Adicionar o resultado no array
       result.push({
         bank: bankAccount.bank,
@@ -525,6 +553,9 @@ export class PrismaTransactionRepository extends TransactionRepository {
   }
 
   async calculateDeliverymanBalance(deliverymanId: string): Promise<number> {
+    const { startOfToday, endOfToday } =
+      await this.dateService.startAndEndOfToday();
+
     const deliveryman = await this.prismaService.user.findUnique({
       where: {
         id: deliverymanId,
@@ -546,10 +577,29 @@ export class PrismaTransactionRepository extends TransactionRepository {
             },
           },
         },
+        createdAt: {
+          gte: startOfToday,
+          lte: endOfToday,
+        },
       },
     });
 
     const saleTotal = saleTransactions.reduce((acc, curr) => {
+      return acc + (curr.amount || 0);
+    }, 0);
+
+    const transferTransactions = await this.prismaService.transaction.findMany({
+      where: {
+        category: 'TRANSFER',
+        userId: deliverymanId,
+        createdAt: {
+          gte: startOfToday,
+          lte: endOfToday,
+        },
+      },
+    });
+
+    const transferTotal = transferTransactions.reduce((acc, curr) => {
       return acc + (curr.amount || 0);
     }, 0);
 
@@ -559,6 +609,10 @@ export class PrismaTransactionRepository extends TransactionRepository {
           in: ['EXPENSE', 'DEPOSIT'],
         },
         userId: deliverymanId,
+        createdAt: {
+          gte: startOfToday,
+          lte: endOfToday,
+        },
       },
     });
 
@@ -566,9 +620,84 @@ export class PrismaTransactionRepository extends TransactionRepository {
       return acc + (curr.amount || 0);
     }, 0);
 
-    const finalBalance = deliveryman.accountAmount + saleTotal - expenseTotal;
+    const finalBalance = saleTotal + transferTotal - expenseTotal;
 
     return finalBalance;
+  }
+  async getDeliverymenCashBalances(
+    pagination: PaginationParams,
+  ): Promise<{ name: string; cashBalance: number }[]> {
+    const { startOfToday, endOfToday } =
+      await this.dateService.startAndEndOfToday();
+
+    const deliverymen = await this.prismaService.user.findMany({
+      where: {
+        role: 'DELIVERYMAN',
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+      take: Number(pagination.itemsPerPage),
+      skip: (pagination.page - 1) * Number(pagination.itemsPerPage),
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    const balances = await Promise.all(
+      deliverymen.map(async (deliveryman) => {
+        const cashSaleTransactions =
+          await this.prismaService.transaction.findMany({
+            where: {
+              category: 'SALE',
+              userId: deliveryman.id,
+              sales: {
+                some: {
+                  paymentMethod: {
+                    equals: 'DINHEIRO',
+                  },
+                },
+              },
+              createdAt: {
+                gte: startOfToday,
+                lte: endOfToday,
+              },
+            },
+          });
+
+        const depositTransactions =
+          await this.prismaService.transaction.findMany({
+            where: {
+              category: 'DEPOSIT',
+              userId: deliveryman.id,
+              createdAt: {
+                gte: startOfToday,
+                lte: endOfToday,
+              },
+            },
+          });
+
+        const totalCashSales = cashSaleTransactions.reduce(
+          (acc, curr) => acc + (curr.amount || 0),
+          0,
+        );
+
+        const totalDeposits = depositTransactions.reduce(
+          (acc, curr) => acc + (curr.amount || 0),
+          0,
+        );
+
+        const cashBalance = (totalCashSales - totalDeposits) / 100;
+  
+        return {
+          name: deliveryman.name,
+          cashBalance,
+        };
+      }),
+    );
+
+    return balances.filter((balance) => balance.cashBalance > 0);
   }
 
   async update(transaction: Transaction): Promise<void> {
@@ -581,6 +710,9 @@ export class PrismaTransactionRepository extends TransactionRepository {
     const existingTransaction = await this.prismaService.transaction.findUnique(
       {
         where: { id: transaction.id },
+        include: {
+          sales: true,
+        },
       },
     );
 
@@ -588,7 +720,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
       throw new Error(`Transação com ID ${transaction.id} não encontrada.`);
     }
 
-    await this.prismaService.transaction.update({
+    const transactionUpdated = await this.prismaService.transaction.update({
       where: {
         id: transaction.id,
       },
@@ -596,6 +728,19 @@ export class PrismaTransactionRepository extends TransactionRepository {
         ...toPrisma,
       },
     });
+
+    if (existingTransaction.sales.length > 0) {
+      await this.prismaService.sales.updateMany({
+        where: {
+          id: {
+            in: existingTransaction.sales.map((sale) => sale.id),
+          },
+        },
+        data: {
+          createdAt: transactionUpdated.createdAt,
+        },
+      });
+    }
   }
 
   async delete(id: string): Promise<void> {

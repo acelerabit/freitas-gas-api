@@ -115,6 +115,10 @@ import { FetchAllAccountTransfers } from '@/application/use-cases/account-transf
 import { DeleteAccountTransfer } from '@/application/use-cases/account-transfer/delete-account-transfer';
 import { UpdateAccountTransfer } from '@/application/use-cases/account-transfer/update-account-transfer';
 import { GetAccountTransfers } from '@/application/use-cases/account-transfer/get-account-transfer';
+import { GetDeliverymenCashBalancesUseCase } from '@/application/use-cases/transaction/get-deliveryman-cash-balance';
+import { GetCustomersWithPositiveFiadoDebtsTotal } from '@/application/use-cases/sale/get-customer-with-sale-fiado-total';
+import { GetCustomersWithPositiveFiadoDebtsByCustomer } from '@/application/use-cases/sale/get-customer-with-sale-fiado-by-customer';
+import { MarkAllAsPaid } from '@/application/use-cases/sale/mark-all-as-paid';
 
 @Module({
   controllers: [
@@ -233,6 +237,10 @@ import { GetAccountTransfers } from '@/application/use-cases/account-transfer/ge
     DeleteAccountTransfer,
     UpdateAccountTransfer,
     GetAccountTransfers,
+    GetDeliverymenCashBalancesUseCase,
+    GetCustomersWithPositiveFiadoDebtsTotal,
+    GetCustomersWithPositiveFiadoDebtsByCustomer,
+    MarkAllAsPaid,
   ],
   imports: [DatabaseModule, EmailModule, CryptographyModule, SchedulesModule],
 })

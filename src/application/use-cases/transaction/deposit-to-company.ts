@@ -14,6 +14,7 @@ interface DepositToCompanyRequest {
   amount: number;
   depositDate: Date;
   bank?: string;
+  bankAccountId?: string;
 }
 
 @Injectable()
@@ -32,6 +33,7 @@ export class DepositToCompanyUseCase {
     deliverymanId,
     depositDate,
     bank,
+    bankAccountId,
   }: DepositToCompanyRequest): Promise<void> {
     const deliveryman = await this.usersRepository.findById(deliverymanId);
 
@@ -45,7 +47,9 @@ export class DepositToCompanyUseCase {
     const amountFormatted = amount * 100;
 
     const revenuesTodayMoney =
-      await this.saleRepository.getTotalMoneySalesByDeliveryman(deliverymanId);
+      await this.transactionRepository.calculateDeliverymanBalance(
+        deliverymanId,
+      );
 
     // se o amount for menor do que o saldo da data de hoje
     if (amountFormatted !== revenuesTodayMoney) {
@@ -74,6 +78,7 @@ export class DepositToCompanyUseCase {
       userId: deliverymanId,
       depositDate,
       bank,
+      bankAccountId,
     });
 
     // zerar saldo do entregador

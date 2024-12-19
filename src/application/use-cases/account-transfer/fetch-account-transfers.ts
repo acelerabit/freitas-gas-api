@@ -5,6 +5,8 @@ import { Injectable } from '@nestjs/common';
 
 interface FetchAllAccountTransferRequest {
   pagination: PaginationParams;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 interface FetchAllAccountTransfersResponse {
@@ -17,9 +19,13 @@ export class FetchAllAccountTransfers {
 
   async execute({
     pagination,
+    startDate,
+    endDate,
   }: FetchAllAccountTransferRequest): Promise<FetchAllAccountTransfersResponse> {
     const accountTransfers = await this.accountTransfersRepository.findAll(
       pagination,
+      startDate,
+      endDate,
     );
 
     return { accountTransfers };

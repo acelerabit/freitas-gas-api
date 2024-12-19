@@ -39,6 +39,7 @@ import { FetchDepositsByDeliveryman } from '@/application/use-cases/transaction/
 import { TransactionsPresenters } from './presenters/transaction.presenter';
 import { FetchIncomeTypesUseCase } from '@/application/use-cases/transaction/fetch-income-types';
 import { CalculateAccountsCompanyBalance } from '@/application/use-cases/transaction/calculate-accounts-company-balance';
+import { GetDeliverymenCashBalancesUseCase } from '@/application/use-cases/transaction/get-deliveryman-cash-balance';
 
 @Controller('transactions')
 export class TransactionsController {
@@ -63,6 +64,7 @@ export class TransactionsController {
     private fetchDepositsByDeliveryman: FetchDepositsByDeliveryman,
     private fetchIncomeTypesUseCase: FetchIncomeTypesUseCase,
     private calculateAccountsCompanyBalance: CalculateAccountsCompanyBalance,
+    private getDeliverymenCashBalancesUseCase: GetDeliverymenCashBalancesUseCase,
   ) {}
 
   @Post()
@@ -233,6 +235,18 @@ export class TransactionsController {
     });
 
     return finalBalance;
+  }
+  @Get('/cashBalance')
+  async list(
+    @Query('page') page = 1,
+    @Query('itemsPerPage') itemsPerPage = 10,
+  ): Promise<{ name: string; cashBalance: number }[]> {
+    const pagination: PaginationParams = {
+      page: Number(page),
+      itemsPerPage: Number(itemsPerPage),
+    };
+
+    return this.getDeliverymenCashBalancesUseCase.execute(pagination);
   }
 
   @Post('/transfer/:deliverymanId')

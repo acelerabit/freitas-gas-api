@@ -1,21 +1,46 @@
 import { PrismaSalesMapper } from './../mappers/sale.mapper';
-import { BottleStatus, PaymentMethod } from '@prisma/client';
+import {
+  BottleStatus,
+  PaymentMethod,
+  TransactionCategory,
+  TransactionType,
+} from '@prisma/client';
 import {
   SalesRepository,
   SortType,
 } from '../../../../application/repositories/sales-repository';
 import { Sale } from '../../../../application/entities/sale';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  applyDecorators,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { PaginationParams } from '@/@shared/pagination-interface';
 import { DateService } from '@/infra/dates/date.service';
 import { fCurrencyIntlBRL } from '@/utils/formatCurrency';
+import { TransactionRepository } from '@/application/repositories/transaction-repository';
+import { CustomersRepository } from '@/application/repositories/customer-repository';
+import { UsersRepository } from '@/application/repositories/user-repository';
+import { ProductRepository } from '@/application/repositories/product-repository';
+import { CustomerWithComodatosRepository } from '@/application/repositories/customer-with-comodato-repository';
+import { BankAccountsRepository } from '@/application/repositories/bank-repositry';
+import { Product } from '@/application/entities/product';
+import { Customer } from '@/application/entities/customer';
+import { User } from '@/application/entities/user';
+import { Transaction } from '@/application/entities/transaction';
+import { CustomerWithComodato } from '@/application/entities/customers-with-comodato';
 
 @Injectable()
 export class PrismaSalesRepository extends SalesRepository {
   constructor(
     private prismaService: PrismaService,
     private dateService: DateService,
+    private readonly transactionRepository: TransactionRepository,
+    private readonly customerRepository: CustomersRepository,
+    private productRepository: ProductRepository,
+    private customerWithComodatoRepository: CustomerWithComodatosRepository,
+    private bankRepository: BankAccountsRepository,
   ) {
     super();
   }
@@ -32,6 +57,302 @@ export class PrismaSalesRepository extends SalesRepository {
       },
     });
     return createdSale.id;
+  }
+
+  async saveSale(sale: Sale, customer: Customer, deliveryman: User) {
+    await this.prismaService.$transaction(async (prisma) => {
+      const formatProducts = await Promise.all(
+        sale.products.map(async (product) => {
+          const getProduct = await this.productRepository.findByTypeAndStatus(
+            product.type,
+            product.status,
+          );
+
+          if (getProduct) {
+            return new Product(
+              {
+                price: product.price * 100,
+                quantity: product.quantity,
+                status: product.status,
+                type: product.type,
+              },
+              getProduct.id,
+            );
+          }
+
+          return null;
+        }),
+      );
+
+      const saleWithCustomerId = new Sale(
+        sale.customerId,
+        {
+          deliverymanId: sale.deliverymanId,
+          paymentMethod: sale.paymentMethod,
+          products: formatProducts.filter((product) => product !== null),
+          totalAmount: sale.totalAmount,
+          type: sale.type,
+          customer: customer,
+          deliveryman: deliveryman,
+        },
+        sale.id,
+      );
+
+      for (const product of saleWithCustomerId.products) {
+        await this.updateStock(product.id, product.quantity, product.status);
+      }
+
+      saleWithCustomerId.calculateTotal();
+
+      // const saleId = await this.createSale(saleWithCustomerId);
+
+      const createdSale = await prisma.sales.create({
+        data: {
+          id: saleWithCustomerId.id,
+          customerId: saleWithCustomerId.customerId,
+          paymentMethod: saleWithCustomerId.paymentMethod as PaymentMethod,
+          total: saleWithCustomerId.totalAmount,
+          returned: false,
+          transactionId: saleWithCustomerId.transactionId,
+          paid: saleWithCustomerId.paymentMethod === 'FIADO' ? false : true,
+        },
+      });
+
+      const saleId = createdSale.id;
+
+      const saleProducts = saleWithCustomerId.products.map((product) => ({
+        id: product.id,
+        salePrice: product.price,
+        typeSale: product.status,
+        quantity: product.quantity,
+      }));
+
+      // await this.createSalesProducts(saleId, saleProducts);
+
+      const salesProducts = saleProducts.map((product) => ({
+        saleId,
+        salePrice: product.salePrice,
+        typeSale: product.typeSale,
+        productId: product.id,
+        quantity: product.quantity,
+      }));
+
+      await prisma.salesProduct.createMany({
+        data: salesProducts,
+      });
+
+      const bankAccountToThisPayment =
+        await this.bankRepository.accountToThisPaymentMethod(
+          sale.paymentMethod,
+        );
+
+      if (
+        !bankAccountToThisPayment &&
+        sale.paymentMethod !== 'DINHEIRO' &&
+        sale.paymentMethod !== 'FIADO'
+      ) {
+        throw new BadRequestException(
+          'Não há conta associada a esse tipo de método de pagamento',
+          {
+            cause: new Error(
+              'Não há conta associada a esse tipo de método de pagamento',
+            ),
+            description:
+              'Não há conta associada a esse tipo de método de pagamento',
+          },
+        );
+      }
+
+      if (
+        !bankAccountToThisPayment &&
+        sale.paymentMethod === 'DINHEIRO' &&
+        deliveryman.role === 'ADMIN'
+      ) {
+        throw new BadRequestException(
+          'Não há conta associada a esse tipo de método de pagamento',
+          {
+            cause: new Error(
+              'Não há conta associada a esse tipo de método de pagamento',
+            ),
+            description:
+              'Não há conta associada a esse tipo de método de pagamento',
+          },
+        );
+      }
+
+      const transaction = new Transaction({
+        amount: saleWithCustomerId.totalAmount,
+        transactionType: TransactionType.EXIT,
+        mainAccount: false,
+        category: TransactionCategory.SALE,
+        userId: saleWithCustomerId.deliverymanId,
+        referenceId: saleId,
+        bankAccountId: bankAccountToThisPayment?.id ?? null,
+      });
+
+      //  const transactionCreated = await this.transactionRepository.createTransaction(transaction);
+
+      const transactionData = {
+        id: transaction.id,
+        amount: transaction.amount,
+        transactionType: transaction.transactionType,
+        bankAccountId: transaction.bankAccountId,
+        category: transaction.category,
+        userId: transaction.userId,
+        referenceId: transaction.referenceId ?? null,
+        createdAt: transaction.createdAt,
+        customCategory: transaction.customCategory ?? null,
+        description: transaction.description,
+        depositDate: transaction.depositDate,
+        senderUserId: transaction.senderUserId,
+        bank: transaction.bank,
+      };
+
+      const transactionCreated = await prisma.transaction.create({
+        data: transactionData,
+      });
+
+      saleWithCustomerId.transactionId = transactionCreated.id;
+      saleWithCustomerId.deliverymanId = transactionCreated.userId;
+
+      const response = await prisma.sales.update({
+        where: {
+          id: createdSale.id,
+        },
+        data: {
+          transactionId: transactionCreated.id,
+        },
+        include: {
+          transaction: {
+            include: {
+              user: true,
+            },
+          },
+          customer: true,
+          products: {
+            include: {
+              product: true,
+              sale: true,
+            },
+          },
+        },
+      });
+
+      const formatted = PrismaSalesMapper.toDomain(response);
+
+      // await this.update(formatted);
+
+      const dbSale = await prisma.sales.findUnique({
+        where: {
+          id: sale.id,
+        },
+      });
+
+      if (dbSale.paymentMethod !== formatted.paymentMethod) {
+        const toPrisma = PrismaSalesMapper.toPrisma(formatted);
+
+        await prisma.sales.update({
+          where: {
+            id: sale.id,
+          },
+          data: {
+            ...toPrisma,
+          },
+        });
+
+        const result = await prisma.bankAccount.findFirst({
+          where: {
+            paymentsAssociated: {
+              hasSome: formatted.paymentMethod,
+            },
+          },
+        });
+
+        if (!result) {
+          return null;
+        }
+
+        await prisma.transaction.update({
+          where: {
+            id: formatted.transactionId,
+          },
+          data: {
+            createdAt: formatted.createdAt,
+            bankAccountId: result.id,
+            bank: result.bank,
+          },
+        });
+
+        return;
+      }
+
+      const toPrisma = PrismaSalesMapper.toPrisma(formatted);
+
+      await prisma.sales.update({
+        where: {
+          id: formatted.id,
+        },
+        data: {
+          ...toPrisma,
+        },
+      });
+
+      await prisma.transaction.update({
+        where: {
+          id: formatted.transactionId,
+        },
+        data: {
+          createdAt: formatted.createdAt,
+        },
+      });
+
+      if (saleWithCustomerId.paymentMethod === 'FIADO') {
+        customer.creditBalance += saleWithCustomerId.totalAmount;
+        await this.customerRepository.update(customer);
+      }
+
+      const hasComodato = saleWithCustomerId.products.some(
+        (product) => product.status === 'COMODATO',
+      );
+
+      if (hasComodato) {
+        const comodatoQuantity = saleWithCustomerId.products
+          .filter((product) => product.status === 'COMODATO')
+          .reduce((acc, product) => acc + product.quantity, 0);
+
+        const comodatoProducts = saleWithCustomerId.products.filter(
+          (product) => product.status === 'COMODATO',
+        );
+
+        const clientHasComodato =
+          await this.customerWithComodatoRepository.findByCustomer(customer.id);
+
+        if (!clientHasComodato) {
+          const customerWithComodato = CustomerWithComodato.create({
+            customerId: customer.id,
+            quantity: comodatoQuantity,
+          });
+
+          await this.customerWithComodatoRepository.create(
+            customerWithComodato,
+          );
+
+          await this.customerWithComodatoRepository.saveProducts(
+            comodatoProducts,
+            customerWithComodato.id,
+          );
+        } else {
+          clientHasComodato.quantity += comodatoQuantity;
+
+          await this.customerWithComodatoRepository.updateProducts(
+            comodatoProducts,
+            clientHasComodato.id,
+          );
+
+          await this.customerWithComodatoRepository.update(clientHasComodato);
+        }
+      }
+    });
   }
 
   async createSalesProducts(
@@ -83,6 +404,223 @@ export class PrismaSalesRepository extends SalesRepository {
       data: salesProducts,
     });
   }
+
+  async updateStockOperations(
+    productId: string,
+    quantity: number,
+    status: BottleStatus,
+    operation: 'add' | 'remove',
+    customerId: string,
+  ): Promise<void> {
+    const product = await this.prismaService.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      throw new BadRequestException('Produto não encontrado', {
+        cause: new Error('Produto não encontrado'),
+        description: 'Produto não encontrado',
+      });
+    }
+
+    // Se o status for 'FULL'
+    if (status === 'FULL') {
+      const newStock =
+        operation === 'add'
+          ? product.quantity + quantity
+          : product.quantity - quantity;
+
+      if (newStock < 0) {
+        throw new BadRequestException('Estoque insuficiente', {
+          cause: new Error('Estoque insuficiente'),
+          description: 'Estoque insuficiente',
+        });
+      }
+
+      await this.prismaService.product.update({
+        where: { id: productId },
+        data: { quantity: newStock },
+      });
+
+      return;
+    }
+
+    // Se o status for 'EMPTY' ou 'COMODATO'
+    if (status === 'EMPTY' || status === 'COMODATO') {
+      const productFull = await this.prismaService.product.findFirst({
+        where: {
+          type: product.type,
+          status: 'FULL',
+        },
+      });
+
+      if (!productFull) {
+        throw new BadRequestException('Produto cheio não encontrado', {
+          cause: new Error('Produto cheio não encontrado'),
+          description: 'Produto cheio não encontrado',
+        });
+      }
+
+      // Ajustando os estoques
+      const newStockFull =
+        operation === 'add'
+          ? productFull.quantity - quantity
+          : productFull.quantity + quantity;
+
+      if (newStockFull < 0) {
+        throw new BadRequestException(
+          'Estoque de bujão cheio insuficiente para realizar a operação',
+          {
+            cause: new Error('Estoque cheio insuficiente'),
+            description: 'Estoque cheio insuficiente',
+          },
+        );
+      }
+
+      const newStock =
+        operation === 'add'
+          ? product.quantity + quantity
+          : product.quantity - quantity;
+
+      if (newStock < 0) {
+        throw new BadRequestException('Estoque insuficiente', {
+          cause: new Error('Estoque insuficiente'),
+          description: 'Estoque insuficiente',
+        });
+      }
+
+      await this.prismaService.product.update({
+        where: { id: productFull.id },
+        data: { quantity: newStockFull },
+      });
+
+      await this.prismaService.product.update({
+        where: { id: productId },
+        data: { quantity: newStock },
+      });
+
+      if (status === 'COMODATO') {
+        if (operation === 'add') {
+          this.addComodato(customerId, quantity, status, productId);
+        }
+
+        if (operation === 'remove') {
+          this.revertComodato(customerId, quantity, status, productId);
+        }
+      }
+
+      return;
+    }
+
+    throw new BadRequestException('Status de produto inválido', {
+      cause: new Error('Status inválido'),
+      description: 'Status fornecido não é válido',
+    });
+  }
+
+  // async revertStock(
+  //   productId: string,
+  //   quantity: number,
+  //   status: BottleStatus,
+  // ): Promise<void> {
+  //   const product = await this.prismaService.product.findUnique({
+  //     where: { id: productId },
+  //   });
+
+  //   if (!product) {
+  //     throw new BadRequestException('Produto não encontrado', {
+  //       cause: new Error('Produto não encontrado'),
+  //       description: 'Produto não encontrado',
+  //     });
+  //   }
+
+  //   if (status === 'FULL') {
+  //     const revertedStock = product.quantity + quantity;
+
+  //     await this.prismaService.product.update({
+  //       where: { id: productId },
+  //       data: { quantity: revertedStock },
+  //     });
+
+  //     return;
+  //   }
+
+  //   if (status === 'EMPTY') {
+  //     const productFull = await this.prismaService.product.findFirst({
+  //       where: {
+  //         type: product.type,
+  //         status: 'FULL',
+  //       },
+  //     });
+
+  //     if (!productFull) {
+  //       throw new BadRequestException('Produto cheio não encontrado', {
+  //         cause: new Error('Produto cheio não encontrado'),
+  //         description: 'Produto cheio não encontrado',
+  //       });
+  //     }
+
+  //     const revertedStockFull = productFull.quantity + quantity;
+  //     const revertedStockEmpty = product.quantity - quantity;
+
+  //     if (revertedStockEmpty < 0) {
+  //       throw new BadRequestException('Estoque insuficiente para reverter', {
+  //         cause: new Error('Estoque insuficiente para reverter'),
+  //         description: 'Estoque insuficiente para reverter',
+  //       });
+  //     }
+
+  //     await this.prismaService.product.update({
+  //       where: { id: productFull.id },
+  //       data: { quantity: revertedStockFull },
+  //     });
+
+  //     await this.prismaService.product.update({
+  //       where: { id: productId },
+  //       data: { quantity: revertedStockEmpty },
+  //     });
+
+  //     return;
+  //   }
+
+  //   if (status === 'COMODATO') {
+  //     const productFull = await this.prismaService.product.findFirst({
+  //       where: {
+  //         type: product.type,
+  //         status: 'FULL',
+  //       },
+  //     });
+
+  //     if (!productFull) {
+  //       throw new BadRequestException('Produto cheio não encontrado', {
+  //         cause: new Error('Produto cheio não encontrado'),
+  //         description: 'Produto cheio não encontrado',
+  //       });
+  //     }
+
+  //     const revertedStockFull = productFull.quantity + quantity;
+  //     const revertedStockComodato = product.quantity - quantity;
+
+  //     if (revertedStockComodato < 0) {
+  //       throw new BadRequestException('Estoque insuficiente para reverter', {
+  //         cause: new Error('Estoque insuficiente para reverter'),
+  //         description: 'Estoque insuficiente para reverter',
+  //       });
+  //     }
+
+  //     await this.prismaService.product.update({
+  //       where: { id: productFull.id },
+  //       data: { quantity: revertedStockFull },
+  //     });
+
+  //     await this.prismaService.product.update({
+  //       where: { id: productId },
+  //       data: { quantity: revertedStockComodato },
+  //     });
+
+  //     return;
+  //   }
+  // } // GPT
 
   async updateStock(
     productId: string,
@@ -219,6 +757,31 @@ export class PrismaSalesRepository extends SalesRepository {
     });
   }
 
+  async markAllAsPaid(
+    customerId: string,
+    bankAccountId: string,
+  ): Promise<void> {
+    const sales = await this.prismaService.sales.findMany({
+      where: { customerId },
+      include: { transaction: true },
+    });
+
+    await Promise.all(
+      sales.map((sale) =>
+        this.prismaService.sales.update({
+          where: { id: sale.id },
+          data: {
+            paid: true,
+            transaction: {
+              update: { bankAccountId },
+            },
+          },
+          include: { transaction: true },
+        }),
+      ),
+    );
+  }
+
   async findById(id: string): Promise<Sale | null> {
     const raw = await this.prismaService.sales.findUnique({
       where: {
@@ -293,11 +856,17 @@ export class PrismaSalesRepository extends SalesRepository {
       }
 
       if (filterParams.startDate && filterParams.endDate) {
+        const startDate = new Date(filterParams.startDate);
+        const endDate = new Date(filterParams.endDate);
+
+        startDate.setUTCHours(0, 0, 0, 0);
+        endDate.setUTCHours(23, 59, 59, 999);
+
         whereFilter = {
           ...whereFilter,
           createdAt: {
-            gte: new Date(filterParams.startDate),
-            lte: new Date(filterParams.endDate),
+            gte: startDate,
+            lte: endDate,
           },
         };
       }
@@ -491,6 +1060,81 @@ export class PrismaSalesRepository extends SalesRepository {
     return total._sum.amount || 0;
   }
 
+  async getTotalBalanceByDeliverymanYesterday(
+    deliverymanId: string,
+  ): Promise<number> {
+    const { startOfYesterday, endOfYesterday } =
+      await this.dateService.startAndEndOfYesterday();
+
+    const deliveryman = await this.prismaService.user.findUnique({
+      where: {
+        id: deliverymanId,
+      },
+    });
+
+    if (!deliveryman) {
+      return 0;
+    }
+
+    const saleTransactions = await this.prismaService.transaction.findMany({
+      where: {
+        category: 'SALE',
+        userId: deliverymanId,
+        sales: {
+          some: {
+            paymentMethod: {
+              equals: 'DINHEIRO',
+            },
+          },
+        },
+        createdAt: {
+          gte: startOfYesterday,
+          lte: endOfYesterday,
+        },
+      },
+    });
+
+    const saleTotal = saleTransactions.reduce((acc, curr) => {
+      return acc + (curr.amount || 0);
+    }, 0);
+
+    const transferTransactions = await this.prismaService.transaction.findMany({
+      where: {
+        category: 'TRANSFER',
+        userId: deliverymanId,
+        createdAt: {
+          gte: startOfYesterday,
+          lte: endOfYesterday,
+        },
+      },
+    });
+
+    const transferTotal = transferTransactions.reduce((acc, curr) => {
+      return acc + (curr.amount || 0);
+    }, 0);
+
+    const expenseTransactions = await this.prismaService.transaction.findMany({
+      where: {
+        category: {
+          in: ['EXPENSE', 'DEPOSIT'],
+        },
+        userId: deliverymanId,
+        createdAt: {
+          gte: startOfYesterday,
+          lte: endOfYesterday,
+        },
+      },
+    });
+
+    const expenseTotal = expenseTransactions.reduce((acc, curr) => {
+      return acc + (curr.amount || 0);
+    }, 0);
+
+    const finalBalance = saleTotal + transferTotal - expenseTotal;
+
+    return finalBalance;
+  }
+
   async getTotalMoneySalesByDeliverymanYesterday(
     deliverymanId: string,
   ): Promise<number> {
@@ -551,7 +1195,7 @@ export class PrismaSalesRepository extends SalesRepository {
             },
           },
           include: {
-            product: true, // Inclui os detalhes do produto
+            product: true,
           },
         },
         transaction: {
@@ -613,7 +1257,254 @@ export class PrismaSalesRepository extends SalesRepository {
     return raw.map(PrismaSalesMapper.toDomain);
   }
 
+  async revertStock(
+    productId: string,
+    quantity: number,
+    status: BottleStatus,
+  ): Promise<void> {
+    const product = await this.prismaService.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      throw new BadRequestException('Produto não encontrado', {
+        cause: new Error('Produto não encontrado'),
+        description: 'Produto não encontrado',
+      });
+    }
+
+    if (status === 'FULL') {
+      const newStock = product.quantity + quantity;
+
+      await this.prismaService.product.update({
+        where: { id: productId },
+        data: { quantity: newStock },
+      });
+
+      return;
+    }
+
+    if (status === 'EMPTY') {
+      const productFull = await this.prismaService.product.findFirst({
+        where: {
+          type: product.type,
+          status: 'FULL',
+        },
+      });
+
+      const newStockFull = productFull.quantity + quantity;
+
+      if (newStockFull < 0) {
+        throw new BadRequestException(
+          'Estoque de bujão cheio insuficiente para fazer a troca',
+          {
+            cause: new Error(
+              'Estoque de bujão cheio insuficiente para fazer a troca',
+            ),
+            description:
+              'Estoque de bujão cheio insuficiente para fazer a troca',
+          },
+        );
+      }
+
+      const newStock = product.quantity - quantity;
+
+      console.log({
+        productFullQuantity: productFull.quantity,
+        productQuantity: product.quantity,
+        newStockFull,
+        newStock,
+      });
+
+      if (newStock < 0) {
+        throw new BadRequestException('Estoque insuficiente', {
+          cause: new Error('Estoque insuficiente'),
+          description: 'Estoque insuficiente',
+        });
+      }
+
+      await this.prismaService.product.update({
+        where: { id: productFull.id },
+        data: { quantity: newStockFull },
+      });
+
+      await this.prismaService.product.update({
+        where: { id: productId },
+        data: { quantity: newStock },
+      });
+
+      return;
+    }
+
+    if (status === 'COMODATO') {
+      const productFull = await this.prismaService.product.findFirst({
+        where: {
+          type: product.type,
+          status: 'FULL',
+        },
+      });
+
+      const newStockFull = productFull.quantity + quantity;
+
+      if (newStockFull < 0) {
+        throw new BadRequestException('Estoque insuficiente', {
+          cause: new Error('Estoque insuficiente'),
+          description: 'Estoque insuficiente',
+        });
+      }
+
+      const newStock = product.quantity - quantity;
+
+      if (newStock < 0) {
+        throw new BadRequestException('Estoque insuficiente', {
+          cause: new Error('Estoque insuficiente'),
+          description: 'Estoque insuficiente',
+        });
+      }
+
+      await this.prismaService.product.update({
+        where: { id: productFull.id },
+        data: { quantity: newStockFull },
+      });
+
+      await this.prismaService.product.update({
+        where: { id: productId },
+        data: { quantity: newStock },
+      });
+
+      return;
+    }
+  }
+
+  async addComodato(
+    customerId: string,
+    quantity: number,
+    typeSale: BottleStatus,
+    productId: string,
+  ) {
+    const raw = await this.prismaService.customerWithComodato.findFirst({
+      where: {
+        customerId,
+      },
+      include: {
+        products: {
+          where: {
+            AND: [
+              {
+                productId,
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    const updated = await this.prismaService.customerWithComodato.update({
+      where: {
+        id: raw.id,
+      },
+      data: {
+        quantity: {
+          increment: quantity,
+        },
+        products: {
+          update: {
+            where: {
+              id: raw.products[0].id,
+            },
+            data: {
+              quantity: {
+                increment: quantity,
+              },
+            },
+          },
+        },
+      },
+      include: {
+        products: true,
+      },
+    });
+  }
+
+  async revertComodato(
+    customerId: string,
+    quantity: number,
+    typeSale: BottleStatus,
+    productId: string,
+  ) {
+    const raw = await this.prismaService.customerWithComodato.findFirst({
+      where: {
+        customerId,
+      },
+      include: {
+        products: {
+          where: {
+            productId,
+          },
+        },
+      },
+    });
+
+    if (!raw) {
+      throw new BadRequestException('Erro');
+    }
+
+    const updated = await this.prismaService.customerWithComodato.update({
+      where: {
+        id: raw.id,
+      },
+      data: {
+        quantity: {
+          decrement: quantity,
+        },
+        products: {
+          update: {
+            where: {
+              id: raw.products[0].id,
+            },
+            data: {
+              quantity: {
+                decrement: quantity,
+              },
+            },
+          },
+        },
+      },
+      include: {
+        products: true,
+      },
+    });
+  }
+
   async deleteSale(saleId: string): Promise<void> {
+    const sale = await this.prismaService.sales.findUnique({
+      where: {
+        id: saleId,
+      },
+      include: {
+        products: true,
+      },
+    });
+
+    await Promise.all(
+      sale.products.map(async (product) => {
+        await this.revertStock(
+          product.productId,
+          product.quantity,
+          product.typeSale,
+        );
+
+        if (product.typeSale === 'COMODATO') {
+          await this.revertComodato(
+            sale.customerId,
+            product.quantity,
+            product.typeSale,
+            product.productId,
+          );
+        }
+      }),
+    );
+
     await this.prismaService.transaction.deleteMany({
       where: {
         sales: {
@@ -630,6 +1521,50 @@ export class PrismaSalesRepository extends SalesRepository {
   }
 
   async update(sale: Sale): Promise<void> {
+    const dbSale = await this.prismaService.sales.findUnique({
+      where: {
+        id: sale.id,
+      },
+    });
+
+    if (dbSale.paymentMethod !== sale.paymentMethod) {
+      const toPrisma = PrismaSalesMapper.toPrisma(sale);
+
+      await this.prismaService.sales.update({
+        where: {
+          id: sale.id,
+        },
+        data: {
+          ...toPrisma,
+        },
+      });
+
+      const result = await this.prismaService.bankAccount.findFirst({
+        where: {
+          paymentsAssociated: {
+            hasSome: sale.paymentMethod,
+          },
+        },
+      });
+
+      if (!result) {
+        return null;
+      }
+
+      await this.prismaService.transaction.update({
+        where: {
+          id: sale.transactionId,
+        },
+        data: {
+          createdAt: sale.createdAt,
+          bankAccountId: result.id,
+          bank: result.bank,
+        },
+      });
+
+      return;
+    }
+
     const toPrisma = PrismaSalesMapper.toPrisma(sale);
 
     await this.prismaService.sales.update({
@@ -638,6 +1573,15 @@ export class PrismaSalesRepository extends SalesRepository {
       },
       data: {
         ...toPrisma,
+      },
+    });
+
+    await this.prismaService.transaction.update({
+      where: {
+        id: sale.transactionId,
+      },
+      data: {
+        createdAt: sale.createdAt,
       },
     });
   }
@@ -830,25 +1774,44 @@ export class PrismaSalesRepository extends SalesRepository {
         : undefined,
     });
 
-    // const customerDebts: {
-    //   [key: string]: {
-    //     customerId: string;
-    //     customerName: string;
-    //     totalDebt: number;
-    //   };
-    // } = {};
+    return debts
+      .filter((debts) => debts.total > 0)
+      .map((debt) => ({
+        id: debt.id,
+        customerId: debt.customerId,
+        customerName: debt.customer.name,
+        totalDebt: debt.total / 100,
+        paid: debt.paid,
+      }));
+  }
 
-    // debts.forEach((sale) => {
-    //   const customerId = sale.customer.id;
-    //   if (!customerDebts[customerId]) {
-    //     customerDebts[customerId] = {
-    //       customerId,
-    //       customerName: sale.customer.name,
-    //       totalDebt: 0,
-    //     };
-    //   }
-    //   customerDebts[customerId].totalDebt += sale.total;
-    // });
+  async getCustomersWithPositiveFiadoDebtsByCustomer(
+    customerId: string,
+    pagination?: PaginationParams,
+  ): Promise<
+    { customerId: string; customerName: string; totalDebt: number }[]
+  > {
+    const debts = await this.prismaService.sales.findMany({
+      where: {
+        paymentMethod: 'FIADO',
+        total: { gte: 0 },
+        customerId,
+      },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      take: pagination?.itemsPerPage
+        ? Number(pagination.itemsPerPage)
+        : undefined,
+      skip: pagination?.page
+        ? (pagination.page - 1) * Number(pagination.itemsPerPage)
+        : undefined,
+    });
 
     return debts
       .filter((debts) => debts.total > 0)
@@ -860,6 +1823,85 @@ export class PrismaSalesRepository extends SalesRepository {
         paid: debt.paid,
       }));
   }
+
+  async getCustomersWithPositiveFiadoDebtsTotal(
+    pagination?: PaginationParams,
+  ): Promise<
+    {
+      customerId: string;
+      customerName: string;
+      totalDebt: number;
+    }[]
+  > {
+    const debts = await this.prismaService.sales.findMany({
+      where: {
+        paymentMethod: 'FIADO',
+        total: { gte: 0 },
+      },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      // take: pagination?.itemsPerPage
+      //   ? Number(pagination.itemsPerPage)
+      //   : undefined,
+      // skip: pagination?.page
+      //   ? (pagination.page - 1) * Number(pagination.itemsPerPage)
+      //   : undefined,
+    });
+
+    const customerDebts: {
+      [key: string]: {
+        customerId: string;
+        customerName: string;
+        totalDebt: number;
+        paid: boolean;
+        sales: { id: string; paid: boolean }[];
+      };
+    } = {};
+
+    debts.forEach((sale) => {
+      const customerId = sale.customer.id;
+      if (!customerDebts[customerId]) {
+        customerDebts[customerId] = {
+          customerId,
+          customerName: sale.customer.name,
+          totalDebt: 0,
+          paid: sale.paid,
+          sales: [],
+        };
+      }
+
+      if (!sale.paid) {
+        customerDebts[customerId].totalDebt += sale.total;
+      }
+
+      customerDebts[customerId].sales.push(sale);
+    });
+
+    const formattedDebts = Object.entries(customerDebts).map(
+      ([id, debt]: [string, any]) => ({
+        id,
+        customerId: debt.customerId,
+        customerName: debt.customerName,
+        totalDebt: debt.totalDebt / 100,
+        paid: debt.paid,
+        sales: debt.sales,
+      }),
+    );
+
+    const page = pagination?.page || 1; // Página atual (padrão: 1)
+    const itemsPerPage = pagination?.itemsPerPage || 10; // Itens por página (padrão: 10)
+    const startIndex = (page - 1) * itemsPerPage; // Índice inicial
+    const endIndex = startIndex + itemsPerPage;
+
+    return formattedDebts.slice(startIndex, endIndex);
+  }
+
   async getTotalSalesByPaymentMethod(
     startDate?: Date,
     endDate?: Date,

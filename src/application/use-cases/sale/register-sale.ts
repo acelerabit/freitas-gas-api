@@ -52,6 +52,21 @@ export class RegisterSaleUseCase {
       );
     }
 
+    const isToPayAfter = sale.paymentMethod === 'FIADO';
+
+    if (isToPayAfter && customer.name === 'Cliente Genérico') {
+      throw new BadRequestException(
+        'Não é permitido utilizar o cliente "Cliente Genérico" para vendas à receber.',
+        {
+          cause: new Error(
+            'Não é permitido utilizar o cliente "Cliente Genérico" para vendas à receber.',
+          ),
+          description:
+            'Não é permitido utilizar o cliente "Cliente Genérico" para vendas à receber.',
+        },
+      );
+    }
+
     const deliveryman = await this.usersRepository.findById(sale.deliverymanId);
 
     if (!deliveryman) {
@@ -61,129 +76,130 @@ export class RegisterSaleUseCase {
       });
     }
 
-    const formatProducts = await Promise.all(
-      sale.products.map(async (product) => {
-        const getProduct = await this.productRepository.findByTypeAndStatus(
-          product.type,
-          product.status,
-        );
+    // const formatProducts = await Promise.all(
+    //   sale.products.map(async (product) => {
+    //     const getProduct = await this.productRepository.findByTypeAndStatus(
+    //       product.type,
+    //       product.status,
+    //     );
 
-        if (getProduct) {
-          return new Product(
-            {
-              price: product.price * 100,
-              quantity: product.quantity,
-              status: product.status,
-              type: product.type,
-            },
-            getProduct.id,
-          );
-        }
+    //     if (getProduct) {
+    //       return new Product(
+    //         {
+    //           price: product.price * 100,
+    //           quantity: product.quantity,
+    //           status: product.status,
+    //           type: product.type,
+    //         },
+    //         getProduct.id,
+    //       );
+    //     }
 
-        return null; // Retorne null para valores não encontrados
-      }),
-    );
+    //     return null; // Retorne null para valores não encontrados
+    //   }),
+    // );
 
-    const saleWithCustomerId = new Sale(sale.customerId, {
-      deliverymanId: sale.deliverymanId,
-      paymentMethod: sale.paymentMethod,
-      products: formatProducts.filter((product) => product !== null),
-      totalAmount: sale.totalAmount,
-      type: sale.type,
-      customer: customer,
-      deliveryman: deliveryman,
-    });
+    // const saleWithCustomerId = new Sale(sale.customerId, {
+    //   deliverymanId: sale.deliverymanId,
+    //   paymentMethod: sale.paymentMethod,
+    //   products: formatProducts.filter((product) => product !== null),
+    //   totalAmount: sale.totalAmount,
+    //   type: sale.type,
+    //   customer: customer,
+    //   deliveryman: deliveryman,
+    // });
 
-    for (const product of saleWithCustomerId.products) {
-      await this.salesRepository.updateStock(
-        product.id,
-        product.quantity,
-        product.status,
-      );
-    }
+    // for (const product of saleWithCustomerId.products) {
+    //   await this.salesRepository.updateStock(
+    //     product.id,
+    //     product.quantity,
+    //     product.status,
+    //   );
+    // }
 
-    saleWithCustomerId.calculateTotal();
+    // saleWithCustomerId.calculateTotal();
 
-    const saleId = await this.salesRepository.createSale(saleWithCustomerId);
+    // const saleId = await this.salesRepository.createSale(saleWithCustomerId);
 
-    const saleProducts = saleWithCustomerId.products.map((product) => ({
-      id: product.id,
-      salePrice: product.price,
-      typeSale: product.status,
-      quantity: product.quantity,
-    }));
+    // const saleProducts = saleWithCustomerId.products.map((product) => ({
+    //   id: product.id,
+    //   salePrice: product.price,
+    //   typeSale: product.status,
+    //   quantity: product.quantity,
+    // }));
 
-    await this.salesRepository.createSalesProducts(saleId, saleProducts);
+    // await this.salesRepository.createSalesProducts(saleId, saleProducts);
 
-    const bankAccountToThisPayment =
-      await this.bankRepository.accountToThisPaymentMethod(sale.paymentMethod);
+    // const bankAccountToThisPayment =
+    //   await this.bankRepository.accountToThisPaymentMethod(sale.paymentMethod);
 
-    const transaction = new Transaction({
-      amount: saleWithCustomerId.totalAmount,
-      transactionType: TransactionType.EXIT,
-      mainAccount: false,
-      category: TransactionCategory.SALE,
-      userId: saleWithCustomerId.deliverymanId,
-      referenceId: saleId,
-      bankAccountId: bankAccountToThisPayment?.id ?? null,
-    });
+    // const transaction = new Transaction({
+    //   amount: saleWithCustomerId.totalAmount,
+    //   transactionType: TransactionType.EXIT,
+    //   mainAccount: false,
+    //   category: TransactionCategory.SALE,
+    //   userId: saleWithCustomerId.deliverymanId,
+    //   referenceId: saleId,
+    //   bankAccountId: bankAccountToThisPayment?.id ?? null,
+    // });
 
-    await this.transactionRepository.createTransaction(transaction);
+    // await this.transactionRepository.createTransaction(transaction);
 
-    saleWithCustomerId.transactionId = transaction.id;
-    saleWithCustomerId.deliverymanId = transaction.userId;
+    // saleWithCustomerId.transactionId = transaction.id;
+    // saleWithCustomerId.deliverymanId = transaction.userId;
 
-    await this.salesRepository.update(saleWithCustomerId);
+    // await this.salesRepository.update(saleWithCustomerId);
 
-    if (saleWithCustomerId.paymentMethod === 'FIADO') {
-      customer.creditBalance += saleWithCustomerId.totalAmount;
-      await this.customerRepository.update(customer);
-    }
+    // if (saleWithCustomerId.paymentMethod === 'FIADO') {
+    //   customer.creditBalance += saleWithCustomerId.totalAmount;
+    //   await this.customerRepository.update(customer);
+    // }
 
-    if (saleWithCustomerId.isComodato()) {
-      this.generateComodatoTerm(saleWithCustomerId);
-    }
+    // if (saleWithCustomerId.isComodato()) {
+    //   this.generateComodatoTerm(saleWithCustomerId);
+    // }
 
-    const hasComodato = saleWithCustomerId.products.some(
-      (product) => product.status === 'COMODATO',
-    );
+    // const hasComodato = saleWithCustomerId.products.some(
+    //   (product) => product.status === 'COMODATO',
+    // );
 
-    if (hasComodato) {
-      const comodatoQuantity = saleWithCustomerId.products
-        .filter((product) => product.status === 'COMODATO')
-        .reduce((acc, product) => acc + product.quantity, 0);
+    // if (hasComodato) {
+    //   const comodatoQuantity = saleWithCustomerId.products
+    //     .filter((product) => product.status === 'COMODATO')
+    //     .reduce((acc, product) => acc + product.quantity, 0);
 
-      const comodatoProducts = saleWithCustomerId.products.filter(
-        (product) => product.status === 'COMODATO',
-      );
+    //   const comodatoProducts = saleWithCustomerId.products.filter(
+    //     (product) => product.status === 'COMODATO',
+    //   );
 
-      const clientHasComodato =
-        await this.customerWithComodatoRepository.findByCustomer(customer.id);
+    //   const clientHasComodato =
+    //     await this.customerWithComodatoRepository.findByCustomer(customer.id);
 
-      if (!clientHasComodato) {
-        const customerWithComodato = CustomerWithComodato.create({
-          customerId: customer.id,
-          quantity: comodatoQuantity,
-        });
+    //   if (!clientHasComodato) {
+    //     const customerWithComodato = CustomerWithComodato.create({
+    //       customerId: customer.id,
+    //       quantity: comodatoQuantity,
+    //     });
 
-        await this.customerWithComodatoRepository.create(customerWithComodato);
+    //     await this.customerWithComodatoRepository.create(customerWithComodato);
 
-        await this.customerWithComodatoRepository.saveProducts(
-          comodatoProducts,
-          customerWithComodato.id,
-        );
-      } else {
-        clientHasComodato.quantity += comodatoQuantity;
+    //     await this.customerWithComodatoRepository.saveProducts(
+    //       comodatoProducts,
+    //       customerWithComodato.id,
+    //     );
+    //   } else {
+    //     clientHasComodato.quantity += comodatoQuantity;
 
-        // se ele ja tem atualizar a quantidade, se não criar o prosuctComodato
-        await this.customerWithComodatoRepository.updateProducts(
-          comodatoProducts,
-          clientHasComodato.id,
-        );
+    //     // se ele ja tem atualizar a quantidade, se não criar o prosuctComodato
+    //     await this.customerWithComodatoRepository.updateProducts(
+    //       comodatoProducts,
+    //       clientHasComodato.id,
+    //     );
 
-        await this.customerWithComodatoRepository.update(clientHasComodato);
-      }
-    }
+    //     await this.customerWithComodatoRepository.update(clientHasComodato);
+    //   }
+
+    await this.salesRepository.saveSale(sale, customer, deliveryman);
   }
 
   private generateComodatoTerm(sale: Sale): void {
