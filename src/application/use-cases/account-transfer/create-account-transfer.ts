@@ -42,7 +42,7 @@ export class CreateAccountTransfer {
     const accountTransfer = AccountTransfer.create({
       originAccountId,
       destinationAccountId,
-      value: value * 100,
+      value: Math.round(value * 100),
     });
 
     await this.accountTransferRepository.create(accountTransfer);

@@ -32,9 +32,9 @@ export class CreateTransactionUseCase {
     userId,
     customCategory,
     description,
-    bankAccountId
+    bankAccountId,
   }: CreateTransactionRequest): Promise<void> {
-    const amountFormatted = amount * 100;
+    const amountFormatted = Math.round(amount * 100);
 
     const transaction = Transaction.create({
       amount: amountFormatted,
@@ -43,7 +43,7 @@ export class CreateTransactionUseCase {
       userId,
       customCategory,
       description,
-      bankAccountId
+      bankAccountId,
     });
 
     if (category === 'INCOME') {

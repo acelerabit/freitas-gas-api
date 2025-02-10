@@ -71,7 +71,7 @@ export class PrismaSalesRepository extends SalesRepository {
           if (getProduct) {
             return new Product(
               {
-                price: product.price * 100,
+                price: Math.round(product.price * 100),
                 quantity: product.quantity,
                 status: product.status,
                 type: product.type,

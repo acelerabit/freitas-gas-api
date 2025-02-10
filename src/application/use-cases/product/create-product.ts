@@ -36,7 +36,7 @@ export class CreateProductUseCase {
     const newProduct = new Product({
       type: type,
       status: status,
-      price: price * 100,
+      price: Math.round(price * 100),
       quantity: quantity,
     });
 

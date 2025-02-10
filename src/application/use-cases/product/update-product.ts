@@ -35,7 +35,7 @@ export class UpdateProductUseCase {
     }
 
     if (price) {
-      updates.price = price * 100;
+      updates.price = Math.round(price * 100);
     }
 
     if (type) {
