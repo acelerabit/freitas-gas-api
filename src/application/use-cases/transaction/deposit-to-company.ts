@@ -44,7 +44,7 @@ export class DepositToCompanyUseCase {
       });
     }
 
-    const amountFormatted = amount * 100;
+    const amountFormatted = Math.round(amount * 100);
 
     const revenuesTodayMoney =
       await this.transactionRepository.calculateDeliverymanBalance(

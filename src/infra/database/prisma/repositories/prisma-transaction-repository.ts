@@ -689,7 +689,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
         );
 
         const cashBalance = (totalCashSales - totalDeposits) / 100;
-  
+
         return {
           name: deliveryman.name,
           cashBalance,
@@ -858,7 +858,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
       category: expense.customCategory,
       percentage:
         totalAmount > 0
-          ? Number(((expense._sum.amount / totalAmount) * 100) / 100)
+          ? Math.round((expense._sum.amount / totalAmount) * 100)
           : 0,
     }));
   }

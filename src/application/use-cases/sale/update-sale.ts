@@ -78,8 +78,8 @@ export class UpdateSaleUseCase {
           {
             type: product.type as ProductType,
             status: product.status as BottleStatus,
-            price: product.price * 100,
-            salePrice: product.salePrice * 100,
+            price: Math.round(product.price * 100),
+            salePrice: Math.round(product.salePrice * 100),
             quantity: product.quantity,
           },
           product.productId,

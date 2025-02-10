@@ -49,7 +49,7 @@ export class TransferToDeliveryman {
     }
 
     const transaction = Transaction.create({
-      amount: amount * 100,
+      amount: Math.round(amount * 100),
       category,
       transactionType,
       userId: deliverymanId,
@@ -61,7 +61,7 @@ export class TransferToDeliveryman {
 
     await this.transactionsRepository.createTransaction(transaction);
 
-    deliveryman.accountAmount = amount * 100;
+    deliveryman.accountAmount = Math.round(amount * 100);
 
     await this.usersRepository.update(deliveryman);
   }

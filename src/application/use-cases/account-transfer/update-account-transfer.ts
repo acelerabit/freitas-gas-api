@@ -45,7 +45,7 @@ export class UpdateAccountTransfer {
     }
 
     if (value) {
-      updates.value = value * 100;
+      updates.value = Math.round(value * 100);
     }
 
     Object.assign(accountTransfer, updates);
