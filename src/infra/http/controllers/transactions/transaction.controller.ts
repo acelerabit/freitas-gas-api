@@ -182,7 +182,7 @@ export class TransactionsController {
       },
     });
 
-    return transactions.map(ExpensesPresenters.toHTTP);
+    return transactions.map(TransactionsPresenters.toHTTP);
   }
 
   @Get('/deposits')

@@ -577,10 +577,10 @@ export class PrismaTransactionRepository extends TransactionRepository {
             },
           },
         },
-        createdAt: {
-          gte: startOfToday,
-          lte: endOfToday,
-        },
+        // createdAt: {
+        //   gte: startOfToday,
+        //   lte: endOfToday,
+        // },
       },
     });
 
@@ -592,10 +592,10 @@ export class PrismaTransactionRepository extends TransactionRepository {
       where: {
         category: 'TRANSFER',
         userId: deliverymanId,
-        createdAt: {
-          gte: startOfToday,
-          lte: endOfToday,
-        },
+        // createdAt: {
+        //   gte: startOfToday,
+        //   lte: endOfToday,
+        // },
       },
     });
 
@@ -609,10 +609,10 @@ export class PrismaTransactionRepository extends TransactionRepository {
           in: ['EXPENSE', 'DEPOSIT'],
         },
         userId: deliverymanId,
-        createdAt: {
-          gte: startOfToday,
-          lte: endOfToday,
-        },
+        // createdAt: {
+        //   gte: startOfToday,
+        //   lte: endOfToday,
+        // },
       },
     });
 
@@ -624,9 +624,10 @@ export class PrismaTransactionRepository extends TransactionRepository {
 
     return finalBalance;
   }
+
   async getDeliverymenCashBalances(
     pagination: PaginationParams,
-  ): Promise<{ name: string; cashBalance: number }[]> {
+  ): Promise<{ deliverymanId: string; name: string; cashBalance: number }[]> {
     const { startOfToday, endOfToday } =
       await this.dateService.startAndEndOfToday();
 
@@ -659,40 +660,59 @@ export class PrismaTransactionRepository extends TransactionRepository {
                   },
                 },
               },
-              createdAt: {
-                gte: startOfToday,
-                lte: endOfToday,
-              },
+              // createdAt: {
+              //   gte: startOfToday,
+              //   lte: endOfToday,
+              // },
             },
           });
 
-        const depositTransactions =
+        const saleTotal = cashSaleTransactions.reduce((acc, curr) => {
+          return acc + (curr.amount || 0);
+        }, 0);
+
+        const transferTransactions =
           await this.prismaService.transaction.findMany({
             where: {
-              category: 'DEPOSIT',
+              category: 'TRANSFER',
               userId: deliveryman.id,
-              createdAt: {
-                gte: startOfToday,
-                lte: endOfToday,
-              },
+              // createdAt: {
+              //   gte: startOfToday,
+              //   lte: endOfToday,
+              // },
             },
           });
 
-        const totalCashSales = cashSaleTransactions.reduce(
-          (acc, curr) => acc + (curr.amount || 0),
-          0,
-        );
+        const transferTotal = transferTransactions.reduce((acc, curr) => {
+          return acc + (curr.amount || 0);
+        }, 0);
 
-        const totalDeposits = depositTransactions.reduce(
-          (acc, curr) => acc + (curr.amount || 0),
-          0,
-        );
+        const expenseTransactions =
+          await this.prismaService.transaction.findMany({
+            where: {
+              category: {
+                in: ['EXPENSE', 'DEPOSIT'],
+              },
+              userId: deliveryman.id,
+              // createdAt: {
+              //   gte: startOfToday,
+              //   lte: endOfToday,
+              // },
+            },
+          });
 
-        const cashBalance = (totalCashSales - totalDeposits) / 100;
+        const expenseTotal = expenseTransactions.reduce((acc, curr) => {
+          return acc + (curr.amount || 0);
+        }, 0);
+
+        const finalBalance = (saleTotal + transferTotal - expenseTotal) / 100;
+
+        console.log({ saleTotal, transferTotal, expenseTotal });
 
         return {
+          deliverymanId: deliveryman.id,
           name: deliveryman.name,
-          cashBalance,
+          cashBalance: finalBalance,
         };
       }),
     );

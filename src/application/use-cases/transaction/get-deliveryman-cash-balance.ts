@@ -8,6 +8,7 @@ export class GetDeliverymenCashBalancesUseCase {
 
   async execute(pagination: PaginationParams): Promise<
     {
+      deliverymanId: string;
       name: string;
       cashBalance: number;
     }[]
