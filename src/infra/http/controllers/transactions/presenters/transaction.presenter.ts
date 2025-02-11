@@ -11,6 +11,7 @@ export class TransactionsPresenters {
       description: transaction.description,
       createdAt: transaction.createdAt,
       bank: transaction.bank,
+      depositDate: transaction.depositDate,
       user: transaction.user
         ? {
             id: transaction.user.id,

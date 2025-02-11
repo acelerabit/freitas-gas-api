@@ -577,10 +577,10 @@ export class PrismaTransactionRepository extends TransactionRepository {
             },
           },
         },
-        createdAt: {
-          gte: startOfToday,
-          lte: endOfToday,
-        },
+        // createdAt: {
+        //   gte: startOfToday,
+        //   lte: endOfToday,
+        // },
       },
     });
 
@@ -592,10 +592,10 @@ export class PrismaTransactionRepository extends TransactionRepository {
       where: {
         category: 'TRANSFER',
         userId: deliverymanId,
-        createdAt: {
-          gte: startOfToday,
-          lte: endOfToday,
-        },
+        // createdAt: {
+        //   gte: startOfToday,
+        //   lte: endOfToday,
+        // },
       },
     });
 
@@ -609,10 +609,10 @@ export class PrismaTransactionRepository extends TransactionRepository {
           in: ['EXPENSE', 'DEPOSIT'],
         },
         userId: deliverymanId,
-        createdAt: {
-          gte: startOfToday,
-          lte: endOfToday,
-        },
+        // createdAt: {
+        //   gte: startOfToday,
+        //   lte: endOfToday,
+        // },
       },
     });
 
@@ -624,6 +624,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
 
     return finalBalance;
   }
+
   async getDeliverymenCashBalances(
     pagination: PaginationParams,
   ): Promise<{ deliverymanId: string; name: string; cashBalance: number }[]> {
@@ -659,10 +660,10 @@ export class PrismaTransactionRepository extends TransactionRepository {
                   },
                 },
               },
-              createdAt: {
-                gte: startOfToday,
-                lte: endOfToday,
-              },
+              // createdAt: {
+              //   gte: startOfToday,
+              //   lte: endOfToday,
+              // },
             },
           });
 
@@ -675,10 +676,10 @@ export class PrismaTransactionRepository extends TransactionRepository {
             where: {
               category: 'TRANSFER',
               userId: deliveryman.id,
-              createdAt: {
-                gte: startOfToday,
-                lte: endOfToday,
-              },
+              // createdAt: {
+              //   gte: startOfToday,
+              //   lte: endOfToday,
+              // },
             },
           });
 
@@ -693,10 +694,10 @@ export class PrismaTransactionRepository extends TransactionRepository {
                 in: ['EXPENSE', 'DEPOSIT'],
               },
               userId: deliveryman.id,
-              createdAt: {
-                gte: startOfToday,
-                lte: endOfToday,
-              },
+              // createdAt: {
+              //   gte: startOfToday,
+              //   lte: endOfToday,
+              // },
             },
           });
 
@@ -705,6 +706,8 @@ export class PrismaTransactionRepository extends TransactionRepository {
         }, 0);
 
         const finalBalance = (saleTotal + transferTotal - expenseTotal) / 100;
+
+        console.log({ saleTotal, transferTotal, expenseTotal });
 
         return {
           deliverymanId: deliveryman.id,
